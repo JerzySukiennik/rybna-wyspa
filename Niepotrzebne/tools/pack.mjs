@@ -1,4 +1,4 @@
-// Rybna Wyspa: capture the critic pack (aerial, first-person scenes with HUD, fish card, held stack, shop, weather) at 1600x900.
+// Rybna Wyspa: capture the critic pack (aerial, first-person scenes with HUD, fish card, held stack, shop, rain, full-moon night) at 1600x900.
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
 const require = createRequire('/Users/jurek/openclaw/node_modules/');
@@ -13,27 +13,28 @@ const shoot = async (q, steps) => {
   await page.waitForFunction(() => window.__rw && window.__rw.playing, null, { timeout: 60000 });
   await page.evaluate(() => { localStorage.clear(); });
   for (const s of steps) {
-    if (s.js) await page.evaluate(s.js);
+    if (s.js) { const r = await page.evaluate(s.js); if (s.log) console.log(s.log, JSON.stringify(r)); }
     await page.waitForTimeout(s.wait || 800);
     if (s.shot) await page.screenshot({ path: `${OUT}/${s.shot}.png` });
   }
   await page.close();
 };
-const aimFish = `(() => { const g = __rw; let best = null; for (const f of g.sim.fish.values()) { const p = f.body.translation(); if (Math.abs(p.y - 1.9) < 0.15 && (!best || p.z < best.z)) best = { x: p.x, y: p.y, z: p.z }; } if (!best) return 0; const e = { x: best.x + 1.3, z: best.z + 1.5 }; g.player.teleport(e.x, 1.62, e.z); const dx = best.x - e.x, dy = best.y - (1.62 + 1.62), dz = best.z - e.z; g.player.yaw = Math.atan2(-dx, -dz); g.player.pitch = Math.atan2(dy, Math.hypot(dx, dz)); return 1; })()`;
+const card = `(() => { const g = __rw; clearInterval(window.__pumpT); const f = [...g.sim.fish.values()].find((x) => x.body && x.body.translation().y > 1.9); if (!f) return 0; const p = { x: 0.6, y: 1.75, z: 9.2 }; f.body.setTranslation(p, true); f.body.setLinvel({ x: 0, y: 0, z: 0 }, true); f.body.setAngvel({ x: 0, y: 0, z: 0 }, true); g.player.teleport(0.6, 1.62, 10.9); g.player.yaw = 0; g.player.pitch = -0.72; return f.sp; })()`;
 await shoot('&phase=0.17&weather=clear', [
-  { js: '__rw.playing = false; __rw.hud.show(false); __rw.mT = 0.95; 1', wait: 1500, shot: 'a' },
+  { js: '__rw.playing = false; __rw.hud.show(false); __rw.mT = 0.95; 1', wait: 1800, shot: 'a' },
   { js: '__rw.playing = true; __rw.hud.show(true); __rw.player.teleport(-2.2, 1.65, 13.4); __rw.player.yaw = 1.32; __rw.player.pitch = 0.0; 1', wait: 1500, shot: 'b' },
   { js: line, wait: 6500 },
-  { js: aimFish, wait: 900, shot: 'c' },
-  { js: `(() => { const g = __rw; clearInterval(window.__pumpT); g.store.state.up.stos = 3; const ids = [...g.sim.fish.keys()].slice(0, 3); for (const id of ids) g.farm.pick(g.pid, id); g.player.teleport(-3, 1.65, 4); g.player.yaw = -2.2; g.player.pitch = -0.05; return ids.length; })()`, wait: 1200, shot: 'd' },
+  { js: card, wait: 160, shot: 'c', log: 'card' },
+  { js: `(() => { const g = __rw; g.store.state.up.stos = 3; const ids = [...g.sim.fish.keys()].slice(0, 4); for (const id of ids) g.farm.pick(g.pid, id); g.player.teleport(-3, 1.65, 4); g.player.yaw = -2.2; g.player.pitch = -0.05; return ids.length; })()`, wait: 1200, shot: 'd' },
   { js: '__rw.panels.toggleShop(true); 1', wait: 800, shot: 'e' },
 ]);
 await shoot('&phase=0.62&weather=deszcz', [
   { js: line, wait: 5000 },
-  { js: '__rw.player.teleport(-7, 1.65, 6); __rw.player.yaw = -1.9; __rw.player.pitch = -0.08; 1', wait: 1500, shot: 'f' },
+  { js: '__rw.player.teleport(-7, 1.65, 6); __rw.player.yaw = -1.9; __rw.player.pitch = -0.08; 1', wait: 1800, shot: 'f' },
 ]);
-await shoot('&phase=0.85&weather=pelnia', [
-  { js: '__rw.playing = false; __rw.hud.show(false); __rw.mT = 2.2; 1', wait: 1800, shot: 'g' },
+await shoot('&phase=0.8&weather=pelnia', [
+  { js: line, wait: 3000 },
+  { js: '__rw.player.teleport(6, 1.65, 3); __rw.player.yaw = -0.95; __rw.player.pitch = 0.05; 1', wait: 2200, shot: 'g' },
 ]);
 await browser.close();
 console.log('pack ok');

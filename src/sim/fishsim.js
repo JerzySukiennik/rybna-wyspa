@@ -6,7 +6,7 @@ import { TRAITS, TRAIT_BY_ID } from '../data/traits.js';
 import { BLOCK_BY_ID } from '../data/blocks.js';
 import { WEATHERS, EXPOSE_EVERY, EXPOSE_CHANCE } from '../data/weather.js';
 import { G, groups, GRAVITY } from './physics.js';
-import { fishLength, fatOf, addTrait, hasTrait, fishValue } from './value.js';
+import { bodyLength, fatOf, addTrait, hasTrait, fishValue } from './value.js';
 import { curveTangent, FLUME_WATER } from '../blocks/defs.js';
 
 export const FISH_CAP = 400;
@@ -46,7 +46,7 @@ export class FishSim {
   makeBody(f, pos, rot, vel, spin) {
     const R = this.R;
     const S = SPECIES[f.sp];
-    const L = fishLength(f);
+    const L = bodyLength(f);
     const d = this.dims(S.id);
     const fat = fatOf(f);
     const hx = L * 0.44, hy = Math.max(0.02, d.h * L * 0.5 * fat), hz = Math.max(0.015, d.w * L * 0.5 * fat);

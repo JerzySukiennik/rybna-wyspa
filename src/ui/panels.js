@@ -217,7 +217,7 @@ export class Panels {
     } else {
       for (const d of BLOCKS.filter((x) => x.cat === this.shopCat)) {
         const locked = d.lvl > lvl;
-        html += `<div class="item ${locked ? 'lock' : ''}"><img src="${this.g.icons.block(d.id)}" alt=""><b>${esc(d.name)}</b><div class="desc">${esc(d.desc || describe(d))}</div><div class="price">${fmtZl(d.cost, d.cost < 100 ? 2 : 0)}</div><div class="own">w magazynie: ${s.wh[d.id] || 0}</div>`;
+        html += `<div class="item ${locked ? 'lock' : ''}"><img src="${this.g.icons.block(d.id)}" alt=""><b>${esc(d.name)}</b><div class="desc">${esc(d.desc || describe(d))}</div><div class="price">${fmtZl(d.cost)}</div><div class="own">w magazynie: ${s.wh[d.id] || 0}</div>`;
         if (locked) html += `<div class="lv">od poziomu ${d.lvl}</div>`;
         else html += `<div class="row">${[1, 5, 20].map((n) => `<button class="btn ${n === 1 ? 'pri' : ''}" data-buy="${d.id}" data-n="${n}" ${s.cash < d.cost * n ? 'disabled' : ''}>×${n}</button>`).join('')}</div>`;
         html += `</div>`;

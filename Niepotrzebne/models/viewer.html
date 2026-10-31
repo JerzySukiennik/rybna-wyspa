@@ -237,8 +237,10 @@ function avatarSheet() {
     const a = buildAvatar(color);
     shadowAll(a);
     if (walk) {
-      a.getObjectByName('armL').rotation.x = 0.55; a.getObjectByName('armR').rotation.x = -0.55;
-      a.getObjectByName('legL').rotation.x = -0.45; a.getObjectByName('legR').rotation.x = 0.45;
+      a.getObjectByName('armL').rotation.x = 0.55; a.getObjectByName('armR').rotation.x = -0.5;
+      a.getObjectByName('forearmL').rotation.x = 0.6; a.getObjectByName('forearmR').rotation.x = 0.3;
+      a.getObjectByName('legL').rotation.x = -0.42; a.getObjectByName('legR').rotation.x = 0.42;
+      a.getObjectByName('shinL').rotation.x = -0.55; a.getObjectByName('shinR').rotation.x = -0.12;
       a.getObjectByName('head').rotation.y = 0.25;
     }
     a.userData.model = true;
@@ -247,7 +249,11 @@ function avatarSheet() {
   };
   const a1 = mk(0xe8742c, false), a2 = mk(0xe8742c, false), a3 = mk('#2f7fd8', true), a4 = mk('#2f7fd8', true), a5 = mk('#3fae5a', false);
   const quad = new THREE.Group();
-  ['#c8323c', '#f2c230', '#8a4fd8', '#22a6a0'].forEach((c, i) => { const a = buildAvatar(c); shadowAll(a); a.position.x = (i - 1.5) * 0.85; a.rotation.y = 0.35; quad.add(a); });
+  ['#c8323c', '#f2c230', '#22a6a0'].forEach((c, i) => { const a = buildAvatar(c); shadowAll(a); a.position.x = (i - 1) * 0.85; a.rotation.y = 0.35; quad.add(a); });
+  const handsOut = shadowAll(buildViewHands());
+  handsOut.position.y = 0.62;
+  handsOut.userData.model = true;
+  stage.scene.add(handsOut);
   quad.userData.model = true;
   stage.scene.add(quad);
   const w = 400, h = 485, t = 30;
@@ -256,13 +262,15 @@ function avatarSheet() {
   addView(stage, a3, { x: 800, y: t, w, h }, new THREE.Vector3(1, 0.12, 0), UP, 0.08);
   addView(stage, a4, { x: 1200, y: t, w, h }, new THREE.Vector3(-0.7, 0.3, -0.75), UP, 0.08);
   addView(stage, a5, { x: 0, y: t + h, w, h }, new THREE.Vector3(0.4, 0.2, 1), UP, 0.08);
-  addView(stage, quad, { x: 400, y: t + h, w: 600, h }, new THREE.Vector3(-0.2, 0.25, -1), UP, 0.06);
+  addView(stage, quad, { x: 400, y: t + h, w: 400, h }, new THREE.Vector3(-0.2, 0.25, -1), UP, 0.06);
+  addView(stage, handsOut, { x: 800, y: t + h, w: 400, h }, new THREE.Vector3(0.35, 0.9, -1), UP, 0.06, 32);
   addCell(0, t, w, h, '<b>przód</b><span class="t">pomarańczowy</span>');
   addCell(400, t, w, h, '<b>3/4</b>');
   addCell(800, t, w, h, '<b>chód, bok</b><span class="t">niebieski</span>');
   addCell(1200, t, w, h, '<b>chód, 3/4</b>');
   addCell(0, t + h, w, h, '<b>tył</b><span class="t">zielony</span>');
-  addCell(400, t + h, 600, h, '<b>kolory kamizelki i czapki</b>');
+  addCell(400, t + h, 400, h, '<b>kolory kamizelki i czapki</b>');
+  addCell(800, t + h, 400, h, '<b>ręce FPP z zewnątrz</b><span class="t">bez stosu</span>');
   const hands = buildViewHands();
   shadowAll(hands);
   const hs = new THREE.Scene();
@@ -273,11 +281,11 @@ function avatarSheet() {
   gr.rotation.x = -Math.PI / 2; gr.position.y = -1.62; hs.add(gr);
   hs.add(hands);
   const stack = new THREE.Group();
-  ['ploc', 'okon', 'leszcz'].forEach((id, i) => { const f = new THREE.Mesh(fishGeometry(id), FISH_MAT); f.scale.setScalar(0.3); f.rotation.set(-Math.PI / 2, 0, (i - 1) * 0.15); f.position.set(0, -0.2 + i * 0.03, -0.5); stack.add(f); });
+  ['ploc', 'okon', 'leszcz'].forEach((id, i) => { const f = new THREE.Mesh(fishGeometry(id), FISH_MAT); f.scale.setScalar(0.32); f.rotation.set(-Math.PI / 2, 0, (i - 1) * 0.14); f.position.set(0, -0.218 + i * 0.034, -0.44); stack.add(f); });
   hs.add(stack);
-  const fp = new THREE.PerspectiveCamera(70, 600 / h, 0.02, 100);
-  views.push({ custom: true, rect: { x: 1000, y: t + h, w: 600, h }, draw(rect) { stack.visible = Q.get('stack') !== '0'; renderer.render(hs, fp); } });
-  addCell(1000, t + h, 600, h, '<b>ręce FPP</b><span class="t">kamera w (0,0,0), patrzy w -Z, z kupką ryb</span>');
+  const fp = new THREE.PerspectiveCamera(75, 400 / h, 0.02, 100);
+  views.push({ custom: true, rect: { x: 1200, y: t + h, w: 400, h }, draw(rect) { stack.visible = Q.get('stack') !== '0'; renderer.render(hs, fp); } });
+  addCell(1200, t + h, 400, h, '<b>ręce FPP</b><span class="t">kamera (0,0,0), FOV 75, stos ryb</span>');
   const old = renderViews;
   renderer.setScissorTest(true);
   old();
@@ -294,7 +302,7 @@ function avatarSheet() {
 function decoSheet() {
   const stage = makeStage(4);
   title('Dekoracje');
-  const cols = 6, rows = 3, top = 30;
+  const cols = 7, rows = 3, top = 30;
   const cw = Math.floor(W / cols), ch = Math.floor((Hh - top) / rows);
   DECO_IDS.forEach((id, i) => {
     const g = decoGeometry(id);
@@ -348,8 +356,11 @@ function freeScene() {
   let t0 = performance.now();
   const draw = () => {
     const t = (performance.now() - t0) / 1000;
-    av2.getObjectByName('armL').rotation.x = Math.sin(t * 6) * 0.55; av2.getObjectByName('armR').rotation.x = -Math.sin(t * 6) * 0.55;
-    av2.getObjectByName('legL').rotation.x = -Math.sin(t * 6) * 0.45; av2.getObjectByName('legR').rotation.x = Math.sin(t * 6) * 0.45;
+    const sw = Math.sin(t * 6);
+    av2.getObjectByName('armL').rotation.x = sw * 0.55; av2.getObjectByName('armR').rotation.x = -sw * 0.55;
+    av2.getObjectByName('forearmL').rotation.x = 0.25 + Math.max(0, sw) * 0.4; av2.getObjectByName('forearmR').rotation.x = 0.25 + Math.max(0, -sw) * 0.4;
+    av2.getObjectByName('legL').rotation.x = -sw * 0.45; av2.getObjectByName('legR').rotation.x = sw * 0.45;
+    av2.getObjectByName('shinL').rotation.x = -Math.max(0, sw) * 0.6; av2.getObjectByName('shinR').rotation.x = -Math.max(0, -sw) * 0.6;
     renderer.render(scene, cam);
     css.render(scene, cam);
   };
@@ -374,7 +385,7 @@ window.__check = () => FISH_IDS.map((id) => {
   const inward = g.userData.inward;
   void P; void N;
   const bcy = +(((g.userData.body.min[1] + g.userData.body.max[1]) / 2)).toFixed(3);
-  return { id, tris: n / 3, lim, len: +(b.max.x - b.min.x).toFixed(4), x0: +b.min.x.toFixed(4), cy: +((b.max.y + b.min.y) / 2).toFixed(4), cz: +((b.max.z + b.min.z) / 2).toFixed(4), h: d.h, w: d.w, attrs, indexed: !!g.index, bend: [+bmin.toFixed(3), +bmax.toFixed(3)], glow: +gmax.toFixed(2), inward, bcy };
+  return { id, st: g.userData.stations, tris: n / 3, lim, len: +(b.max.x - b.min.x).toFixed(4), x0: +b.min.x.toFixed(4), cy: +((b.max.y + b.min.y) / 2).toFixed(4), cz: +((b.max.z + b.min.z) / 2).toFixed(4), h: d.h, w: d.w, attrs, indexed: !!g.index, bend: [+bmin.toFixed(3), +bmax.toFixed(3)], glow: +gmax.toFixed(2), inward, bcy };
 });
 
 try {

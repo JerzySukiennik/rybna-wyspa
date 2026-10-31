@@ -24,8 +24,8 @@ for (const job of jobs) {
   if (err) { console.log('ERROR', job, err); continue; }
   if (kind === 'check') {
     const rows = await page.evaluate(() => window.__check());
-    console.log('id'.padEnd(12), 'tris', ' lim', '  len  ', '  x0   ', '  cy   ', '  cz   ', '  h    ', '  w    ', 'attrs idx bend        glow inw bodyCy');
-    for (const r of rows) console.log(r.id.padEnd(12), String(r.tris).padStart(4), String(r.lim).padStart(4), r.len.toFixed(4), r.x0.toFixed(4).padStart(7), r.cy.toFixed(4).padStart(7), r.cz.toFixed(4).padStart(7), r.h.toFixed(4).padStart(6), r.w.toFixed(4).padStart(6), String(r.attrs).padEnd(5), String(r.indexed).padEnd(5), JSON.stringify(r.bend).padEnd(12), String(r.glow).padEnd(4), String(r.inward).padStart(3), String(r.bcy).padStart(6), r.tris > r.lim || r.tris < 150 ? 'BUDGET!' : '', Math.abs(r.len - 1) > 0.01 ? 'LEN!' : '');
+    console.log('id'.padEnd(12), 'S ', 'tris', ' lim', '  len  ', '  x0   ', '  cy   ', '  cz   ', '  h    ', '  w    ', 'attrs idx bend        glow inw bodyCy');
+    for (const r of rows) console.log(r.id.padEnd(12), String(r.st).padStart(2), String(r.tris).padStart(4), String(r.lim).padStart(4), r.len.toFixed(4), r.x0.toFixed(4).padStart(7), r.cy.toFixed(4).padStart(7), r.cz.toFixed(4).padStart(7), r.h.toFixed(4).padStart(6), r.w.toFixed(4).padStart(6), String(r.attrs).padEnd(5), String(r.indexed).padEnd(5), JSON.stringify(r.bend).padEnd(12), String(r.glow).padEnd(4), String(r.inward).padStart(3), String(r.bcy).padStart(6), r.tris > r.lim || r.tris < 150 ? 'BUDGET!' : '', Math.abs(r.len - 1) > 0.01 ? 'LEN!' : '');
     continue;
   }
   await page.waitForTimeout(300);

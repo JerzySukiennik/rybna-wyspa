@@ -13,13 +13,21 @@ export class Input {
     this.pressed = [];
     this.released = [];
     this.onLockChange = null;
+    this.onLockError = null;
+    this.onKey = null;
+    this.canLock = null;
     this.blockKeys = false;
     addEventListener('keydown', (e) => {
       if (e.code === 'Tab') e.preventDefault();
       if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+      if (!e.repeat && this.onKey && this.onKey(e.code)) return;
       if (!e.repeat) this.pressed.push(e.code);
       if (this.locked) this.keys.add(e.code);
     });
+    canvas.addEventListener('mousedown', () => {
+      if (!this.locked && this.canLock && this.canLock()) this.lock();
+    });
+    document.addEventListener('pointerlockerror', () => { if (this.onLockError) this.onLockError(); });
     addEventListener('keyup', (e) => { this.keys.delete(e.code); this.released.push(e.code); });
     addEventListener('blur', () => { this.keys.clear(); this.left = false; this.right = false; });
     addEventListener('mousemove', (e) => {
@@ -49,7 +57,12 @@ export class Input {
   lock() {
     try {
       const r = this.canvas.requestPointerLock({ unadjustedMovement: true });
-      if (r && r.catch) r.catch(() => { try { this.canvas.requestPointerLock(); } catch (e) { /* denied */ } });
+      if (r && r.catch) r.catch(() => {
+        try {
+          const r2 = this.canvas.requestPointerLock();
+          if (r2 && r2.catch) r2.catch(() => { if (this.onLockError) this.onLockError(); });
+        } catch (e) { if (this.onLockError) this.onLockError(); }
+      });
     } catch (e) { /* denied */ }
   }
 

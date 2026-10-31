@@ -108,6 +108,29 @@ export class Geo {
     return this;
   }
 
+  line(a, b, r, color, seg = 6, o = {}) {
+    const d = new THREE.Vector3(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+    const len = d.length();
+    if (len < 1e-5) return this;
+    const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize());
+    this.push(new THREE.Matrix4().compose(new THREE.Vector3(a[0], a[1], a[2]), q, new THREE.Vector3(1, 1, 1)));
+    this.cyl(0, 0, 0, r, o.r1 ?? r, len, seg, color, o);
+    return this.pop();
+  }
+
+  torus(cx, cy, cz, R, r, segR, segT, color, o = {}) {
+    const arc = o.arc ?? Math.PI * 2;
+    const P = (a, b) => [cx + (R + r * Math.cos(b)) * Math.cos(a), cy + (R + r * Math.cos(b)) * Math.sin(a), cz + r * Math.sin(b)];
+    for (let i = 0; i < segR; i++) {
+      const a0 = (i / segR) * arc + (o.a0 || 0), a1 = ((i + 1) / segR) * arc + (o.a0 || 0);
+      for (let j = 0; j < segT; j++) {
+        const b0 = (j / segT) * Math.PI * 2, b1 = ((j + 1) / segT) * Math.PI * 2;
+        this.quad(P(a0, b0), P(a1, b0), P(a1, b1), P(a0, b1), o.alt && i % 2 ? o.alt : color, o.emit || 0);
+      }
+    }
+    return this;
+  }
+
   prism(pts, z0, z1, color, o = {}) {
     const n = pts.length;
     const side = o.side || color;

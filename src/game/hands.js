@@ -159,26 +159,36 @@ export class Hands {
     vh.visible = show && stack.length > 0;
     this.wob += dt * (2 + g.player.speedNow * 1.4);
     const sway = Math.sin(this.wob) * 0.012 * Math.min(1, g.player.speedNow / 4);
-    vh.position.set(sway, 0.075 + Math.abs(Math.cos(this.wob)) * 0.01 * Math.min(1, g.player.speedNow / 4), 0.02);
+    const bob = Math.abs(Math.cos(this.wob)) * 0.01 * Math.min(1, g.player.speedNow / 4);
+    vh.position.set(sway, 0.03 + bob, 0);
     const cam = g.camera;
-    let y = -0.235;
+    let y = -0.22 + bob;
     let i = 0;
+    const now = new Set();
     for (const f of stack) {
       const r = g.fishView.recs.get(f.id);
       if (!r) continue;
+      now.add(f.id);
+      r.held = true;
       if (!show || i >= 14) { r.visible = false; r.p.set(0, -60, 0); g.fishView.place(r); i++; continue; }
       r.visible = true;
-      const th = Math.max(0.03, r.L * r.dims.w * r.fat);
-      const lean = Math.sin(this.wob * 0.5 + i * 0.7) * 0.02 * Math.min(1, i / 4);
-      tmp.set(sway + lean * i * 0.3, y + th / 2, -0.43 - Math.min(0.14, r.L * 0.08));
+      const th = Math.max(0.022, r.L * 0.6 * r.dims.w * r.fat * 1.3 + 0.006);
+      const lean = Math.sin(this.wob * 0.5 + i * 0.7) * 0.012 * Math.min(1, i / 4);
+      tmp.set(sway + lean * i * 0.3 + (i % 2 ? 0.01 : -0.008), y + th / 2, -0.43 - Math.min(0.06, r.L * 0.03));
       tmp.applyMatrix4(cam.matrixWorld);
-      q.setFromEuler(new THREE.Euler(Math.PI / 2, 0, (i % 2 ? 0.12 : -0.1) + lean, 'XYZ'));
+      q.setFromEuler(new THREE.Euler(Math.PI / 2, 0, (i % 2 ? 0.14 : -0.12) + lean, 'XYZ'));
       q.premultiply(cam.quaternion);
       r.p.copy(tmp);
       r.q.copy(q);
       g.fishView.place(r);
-      y += th * 0.9;
+      y += th;
       i++;
     }
+    for (const id of this.heldIds || []) {
+      if (now.has(id)) continue;
+      const r = g.fishView.recs.get(id);
+      if (r) { r.held = false; g.fishView.place(r); }
+    }
+    this.heldIds = now;
   }
 }

@@ -15,9 +15,9 @@ export const FISH_IDS = [
 const BASE = {
   L: 0.81, H: 0.25, up: 0.52, W: 0.1, pkT: 0.4, pkB: 0.44, pkW: 0.3, nT: 0.72, nB: 0.8, nW: 0.55,
   tT: 1, tB: 1, tW: 1, ped: 0.3, pedB: null, pedW: 0.34, my: 0, mt: 0.3, cT: 0, eU: 2, eL: 2, N: 10, S: 13,
-  grad: [-0.65, -0.25, 0.3, 0.75], jit: 0.07, pat: [],
+  grad: [-0.65, -0.25, 0.3, 0.75], jit: 0.08, pat: [], sat: 0.88,
   col: { back: '#4d6470', flank: '#cfd6da', belly: '#f0f1ee' },
-  eye: { u: 0.072, yn: 0.25, r: 0.025, iris: '#d9d5c3', pupil: '#0b0c0f', glow: 0 },
+  eye: { u: 0.072, yn: 0.25, r: 0.025, iris: '#f1efe6', pupil: '#0b0c0f', glow: 0 },
   mouth: { t: 'term', u: 0.032, y0: 0, y1: -0.15, w: 0.0034, h: 0.0028, col: '#2a2420' },
   gill: { u: 0.19, k: 0.022, y0: 0.6, y1: -0.7 },
   fins: {
@@ -214,7 +214,9 @@ function finCol(sp, key, s, rf, j, r) {
   if (fp.dots && rf > 0.25 && hh(j * 7 + 3, r * 13 + 5, sp.seed * 31 + key.charCodeAt(0)) < fp.dots[1]) c = mixC(c, H(fp.dots[0]), fp.dots[2] ?? 0.75);
   if (fp.spot && s >= fp.spot[1] && rf >= fp.spot[2]) c = H(fp.spot[0]).clone();
   if (fp.edge && rf >= fp.edge[1]) c = mixC(c, H(fp.edge[0]), fp.edge[2] ?? 1);
-  return c;
+  if (fp.lead && j === 0) c = mixC(c, H(fp.lead), 0.85);
+  if (rf > 0.8 && !fp.noEdge) c.multiplyScalar(fp.edgeK ?? 0.82);
+  return c.multiplyScalar(1 + (hh(j * 17 + r * 5 + 3, key.charCodeAt(0), sp.seed) - 0.5) * 0.08);
 }
 
 function medianFin(ctx, key, spec) {
@@ -223,7 +225,8 @@ function medianFin(ctx, key, spec) {
   const { sp, prof, S } = ctx;
   const top = key !== 'A' && key !== 'A2';
   const n = o.n || Math.max(3, Math.round((u1 - u0) / 0.024));
-  const R = o.rows || (n > 9 ? 1 : 2);
+  const R = o.rows || (n > 12 ? 1 : 2);
+  const qs = R === 2 ? [0, o.q ?? 0.66, 1] : Array.from({ length: R + 1 }, (_, r) => r / R);
   const rows = Array.from({ length: R + 1 }, () => []);
   const sg = top ? 1 : -1;
   for (let j = 0; j <= n; j++) {
@@ -235,15 +238,17 @@ function medianFin(ctx, key, spec) {
     const B = [pr.x, yb - sg * inset, 0];
     const T = [pr.x - rk, yb + sg * hf, 0];
     for (let r = 0; r <= R; r++) {
-      const q = r / R;
+      const q = qs[r];
       const bow = o.bow ? o.bow * Math.sin(Math.PI * q) * hf : 0;
       rows[r].push([lerp(B[0], T[0], q) + bow, lerp(B[1], T[1], q), 0]);
     }
   }
-  const th = o.th ?? 0.0055;
-  const thick = R === 1 ? [th, 0] : [th, th * 0.4, 0];
+  const th = o.th ?? 0.0082;
+  const thick = R === 1 ? [th, 0] : [th, th * 0.42, 0];
   const glow = o.glowFn || o.glow || 0;
-  finStrip(S, rows, thick, [0, 0, 1], (r, j) => (o.colFn ? o.colFn(r, j, R, n) : finCol(sp, key, (j + 0.5) / n, (r + 0.5) / R, j, r)), glow, 1);
+  finStrip(S, rows, thick, [0, 0, 1], (r, j) => (o.colFn ? o.colFn(r, j, R, n) : finCol(sp, key, (j + 0.5) / n, R === 1 ? 0.5 : (r === 0 ? 0.3 : 0.9), j, r)), glow, 1);
+  ctx.edges = ctx.edges || [];
+  ctx.edges.push({ key, pts: rows[R], top });
 }
 
 function caudalOutline(Cs, Lc, m) {
@@ -294,7 +299,7 @@ function caudal(ctx) {
     const v = j / m;
     const b = [xb, yc + hp * (1 - 2 * v), 0];
     const e = [xb - O[j][0], yc + O[j][1], 0];
-    let mm = vlerp(b, e, 0.42);
+    let mm = vlerp(b, e, Cs.q ?? 0.6);
     if (j === 0) mm = add(mm, [0, bul, 0]);
     if (j === m) mm = add(mm, [0, -bul, 0]);
     B.push(b); M.push(mm); E.push(e);
@@ -303,12 +308,14 @@ function caudal(ctx) {
   const lowSplit = Cs.split ?? 0.5;
   const colFn = Cs.colFn || ((r, j) => {
     const v = (j + 0.5) / m;
-    const rf = r === 0 ? 0.25 : 0.8;
+    const rf = r === 0 ? 0.3 : 0.9;
     const low = sp.fc.Cl && v > lowSplit;
     const c = finCol(sp, low ? 'Cl' : 'C', v, rf, j, r);
     return c;
   });
-  finStrip(S, [B, M, E], [thB, 0.0028, 0], [0, 0, 1], colFn, Cs.glowFn || Cs.glow || 0, 1);
+  finStrip(S, [B, M, E], [thB, 0.0036, 0], [0, 0, 1], colFn, Cs.glowFn || Cs.glow || 0, 1);
+  ctx.edges = ctx.edges || [];
+  ctx.edges.push({ key: 'C', pts: E, top: true });
 }
 
 function pairedFin(ctx, key) {
@@ -316,7 +323,7 @@ function pairedFin(ctx, key) {
   const P = sp.fins[key];
   if (!P) return;
   const m = P.m || 3;
-  const R = P.rows || 1;
+  const R = P.rows || 2;
   for (const side of [1, -1]) {
     const at = ctx.surfAt(P.u, P.yn, side);
     let e1, e2;
@@ -344,23 +351,31 @@ function pairedFin(ctx, key) {
         default: f = 1 - 0.5 * s;
       }
       const tp = madd(rp, d, P.len * f);
-      for (let r = 0; r <= R; r++) rows[r].push(vlerp(rp, tp, r / R));
+      for (let r = 0; r <= R; r++) rows[r].push(vlerp(rp, tp, R === 2 ? [0, 0.66, 1][r] : r / R));
     }
-    const thick = R === 1 ? [0.0042, 0] : [0.0042, 0.0018, 0];
-    finStrip(S, rows, thick, nrm, P.colFn || ((r, j) => finCol(sp, key, (j + 0.5) / m, R === 1 ? 0.55 : (r === 0 ? 0.2 : 0.85), j, r)), P.glow || 0, 1);
+    const thick = R === 1 ? [0.006, 0] : [0.006, 0.0026, 0];
+    finStrip(S, rows, thick, nrm, P.colFn || ((r, j) => finCol(sp, key, (j + 0.5) / m, R === 1 ? 0.5 : (r === 0 ? 0.3 : 0.9), j, r)), P.glow || 0, 1);
   }
 }
 
 function eyes(ctx) {
   const E = ctx.sp.eye;
   if (!E) return;
+  const pr = ctx.prof(E.u);
+  const r = Math.min(E.r * (E.k ?? 1.75), (E.fit ?? 0.34) * (pr.ht + pr.hb));
+  ctx.eyeR = r;
   for (const side of [1, -1]) {
     const at = ctx.surfAt(E.u, E.yn, side);
     const n = norm(add(at.n, [0, 0, side * (E.out ?? 0.25)]));
-    dome(ctx.S, ctx.caster, at.p, n, E.r, {
-      rings: [[1, -0.1], [E.pf ?? 0.56, 0.2]], apex: 0.3, seg: 8, kind: 3,
+    dome(ctx.S, ctx.caster, at.p, n, r, {
+      rings: [[1, -0.08], [E.pf ?? 0.5, 0.2]], apex: 0.3, seg: 8, kind: 3,
       cols: [H(E.iris), H(E.pupil)], glows: [E.glow || 0, E.pglow ?? (E.glow || 0)],
     });
+    if (E.spark !== false) {
+      const [t1, t2] = basis(n);
+      const q = madd(madd(madd(at.p, n, 0.3 * r), t2, 0.2 * r), t1, 0.14 * r * (E.u < 0.5 ? 1 : 1));
+      dome(ctx.S, null, q, n, 0.15 * r, { seg: 3, rings: [[1, -0.35]], apex: 0.5, cols: [H('#ffffff')], glows: [E.glow ? 0.6 : 0], kind: 3 });
+    }
   }
 }
 
@@ -474,6 +489,29 @@ function spotsX(ctx) {
   }
 }
 
+function spotsDisc(ctx) {
+  for (const D of ctx.sp.dspots || []) {
+    const rows = D.rows || [null];
+    for (const side of [1, -1]) {
+      rows.forEach((ry, k) => {
+        for (let i = 0; i < D.n; i++) {
+          const sd = D.seed + k * 7 + (side > 0 ? 0 : 3);
+          const off = ry === null ? 0 : (k % 2) * 0.5;
+          const u = D.u0 + ((i + 0.5 + off + (hh(i, 81, sd) - 0.5) * (D.ju ?? 0.8)) * (D.u1 - D.u0)) / (D.n + (ry === null ? 0 : 0.5));
+          if (u > D.u1 || u < D.u0) continue;
+          const yn = ry === null ? lerp(D.y0, D.y1, hh(i, 83, sd)) : ry + (hh(i, 85, sd) - 0.5) * (D.jy ?? 0.15);
+          if (D.skip && hh(i, 93, sd) < D.skip) continue;
+          const at = ctx.surfAt(u, yn, side);
+          const rv = D.rv ?? 0.4;
+          const r = D.r * (1 - rv / 2 + rv * hh(i, 87, sd));
+          const st = (D.st ?? 1) * (0.85 + 0.3 * hh(i, 89, sd));
+          dome(ctx.S, ctx.caster, at.p, at.n, r, { seg: D.seg || 5, rings: [[1, -0.06]], apex: D.h ?? 0.16, stretch: st, rot: (D.rot ?? hh(i, 91, sd)) * 6.283, cols: [H(D.col)], kind: 5 });
+        }
+      });
+    }
+  }
+}
+
 function buildBody(ctx) {
   const { sp, prof, S } = ctx;
   const N = sp.N;
@@ -555,8 +593,31 @@ function makeCtx(sp) {
   return ctx;
 }
 
+const LIMIT = { jesiotr: 1000, sum: 1000, zloty_sum: 1000, potwor: 1000 };
+
 function build(id) {
-  const sp = resolve(id);
+  const sp0 = resolve(id);
+  const lim = LIMIT[id] ?? 700;
+  let res = null;
+  for (let s = sp0.S; s >= 8; s--) {
+    res = buildOnce({ ...sp0, S: s });
+    if (res.tris <= lim || sp0.stations || sp0.builder) break;
+  }
+  return res;
+}
+
+function grade(S, sat) {
+  if (sat >= 1) return;
+  for (let v = 0; v < S.g.length; v++) {
+    if (S.g[v] > 0) continue;
+    const i = v * 3;
+    const L = 0.2126 * S.c[i] + 0.7152 * S.c[i + 1] + 0.0722 * S.c[i + 2];
+    for (let a = 0; a < 3; a++) S.c[i + a] = L + (S.c[i + a] - L) * sat;
+  }
+}
+
+function buildOnce(sp) {
+  const id = sp.id;
   const ctx = makeCtx(sp);
   if (sp.builder) sp.builder(ctx);
   else buildBody(ctx);
@@ -574,10 +635,12 @@ function build(id) {
     gill(ctx);
     barbels(ctx);
     spotsRaised(ctx);
+    spotsDisc(ctx);
     spotsX(ctx);
   }
   if (sp.special) sp.special(ctx);
   const S = ctx.S;
+  grade(S, sp.sat);
   let inward = 0;
   for (let t = 0; t < S.k.length; t++) {
     if (S.k[t] !== 0) continue;
@@ -596,8 +659,8 @@ function build(id) {
   const dims = { h: +(body.max[1] - body.min[1]).toFixed(4), w: +(body.max[2] - body.min[2]).toFixed(4), cy: +((body.max[1] + body.min[1]) / 2).toFixed(4) };
   const geo = S.geometry((x) => clamp(0.5 - x, 0, 1));
   geo.name = 'fish_' + id;
-  geo.userData = { id, dims, body: { min: body.min, max: body.max }, inward };
-  return { geo, dims };
+  geo.userData = { id, dims, body: { min: body.min, max: body.max }, inward, stations: sp.S };
+  return { geo, dims, tris: S.count };
 }
 
 function get(id) {

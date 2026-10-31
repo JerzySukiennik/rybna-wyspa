@@ -28,6 +28,12 @@ export function fishLength(f) {
   return sp.len * Math.cbrt(f.w / sp.kg);
 }
 
+export function bodyLength(f) {
+  const L = fishLength(f);
+  const t = Math.min(1, Math.max(0, (L - 0.25) / 0.65));
+  return L * (1 + 0.45 * (1 - t * t * (3 - 2 * t)));
+}
+
 export function fatOf(f) {
   let k = 1;
   for (const t of f.tr) k *= TRAITS[t].fat;

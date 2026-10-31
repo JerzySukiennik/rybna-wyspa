@@ -188,7 +188,11 @@ export class Hud {
       el.innerHTML = `${img}<div><div class="nm">${esc(S.name)}</div><div class="lat">${esc(S.latin || 'gatunek nieopisany')}</div><div class="rar">${R.name}</div></div><div class="val"><span>${fmtKg(f.w)} · ${state}</span><b>${fmtZl(v)}</b></div>${chips.length ? `<div class="tr">${chips.join('')}</div>` : ''}`;
       el.classList.remove('hidden');
     }
-    el.style.transform = `translate(${Math.round(sx)}px, ${Math.round(sy)}px) translate(-50%, -100%) rotate(-1.5deg)`;
+    const w = 300, h = el.offsetHeight || 150;
+    let x = sx + 36, y = sy - h * 0.5;
+    if (x + w > innerWidth - 12) x = sx - 36 - w;
+    y = Math.max(150, Math.min(innerHeight - h - 150, y));
+    el.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px) rotate(-1deg)`;
   }
 
   fps(text) {

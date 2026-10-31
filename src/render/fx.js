@@ -11,25 +11,30 @@ const PV = /* glsl */`
 attribute vec4 aCol;
 attribute float aSize;
 varying vec4 vCol;
+varying float vNear;
 uniform float uScale;
 void main() {
   vCol = aCol;
   vec4 mv = modelViewMatrix * vec4(position, 1.0);
-  gl_PointSize = min(64.0, aSize * uScale / max(0.5, -mv.z));
+  vNear = smoothstep(0.35, 1.1, -mv.z);
+  gl_PointSize = min(30.0, aSize * uScale / max(0.5, -mv.z));
   gl_Position = projectionMatrix * mv;
 }`;
 
 const PF = /* glsl */`
 varying vec4 vCol;
+varying float vNear;
 void main() {
   vec2 d = gl_PointCoord - 0.5;
   float r = length(d);
   if (r > 0.5) discard;
-  gl_FragColor = vec4(vCol.rgb, vCol.a * smoothstep(0.5, 0.18, r));
+  float hi = smoothstep(0.2, 0.0, length(d - vec2(-0.13, -0.15)));
+  vec3 c = vCol.rgb * (0.72 + 0.28 * smoothstep(0.5, 0.05, r)) + hi * 0.35;
+  gl_FragColor = vec4(c, vCol.a * smoothstep(0.5, 0.34, r) * vNear);
 }`;
 
 const FX = {
-  splash: { col: '#dff6ff', size: 0.16, life: 0.7, g: -9, spread: 2.2, up: 2.6, add: false },
+  splash: { col: '#c3d8da', size: 0.075, life: 0.7, g: -9, spread: 2.2, up: 2.6, add: false },
   sparkle: { col: '#fff7c2', size: 0.09, life: 0.6, g: 0, spread: 0.4, up: 0.3, add: true },
   smoke: { col: '#9b9690', size: 0.28, life: 1.4, g: 0.6, spread: 0.2, up: 0.5, add: false },
   fire: { col: '#ffa23a', size: 0.16, life: 0.55, g: 1.6, spread: 0.25, up: 0.9, add: true },
@@ -39,7 +44,7 @@ const FX = {
   motes: { col: '#9dff4a', size: 0.06, life: 1.2, g: 0.25, spread: 0.3, up: 0.25, add: true },
   stars: { col: '#e2c8ff', size: 0.07, life: 0.8, g: 0, spread: 0.4, up: 0.2, add: true },
   snow: { col: '#ffffff', size: 0.07, life: 1.0, g: -0.6, spread: 0.3, up: 0.3, add: false },
-  drips: { col: '#9fdcff', size: 0.05, life: 0.5, g: -6, spread: 0.1, up: 0, add: false },
+  drips: { col: '#a9c4c8', size: 0.04, life: 0.5, g: -6, spread: 0.1, up: 0, add: false },
   glint: { col: '#fff0b0', size: 0.1, life: 0.3, g: 0, spread: 0.05, up: 0, add: true },
   clover: { col: '#5fd068', size: 0.08, life: 0.8, g: 0.3, spread: 0.3, up: 0.3, add: false },
   field: { col: '#ff8be6', size: 0.06, life: 0.6, g: 0, spread: 0.6, up: 0, add: true },

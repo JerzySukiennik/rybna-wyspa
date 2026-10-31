@@ -1,7 +1,7 @@
 // Rybna Wyspa: low-poly decorations of the Narew bank (trees, reeds, rocks, lily, boat, pier) as vertex-coloured geometry.
 import { Soup, tube, blob, hexa, C, shade, mixC, hh, norm, add, mul, sub } from './soup.js';
 
-export const DECO_IDS = ['willow', 'birch', 'alder', 'pine', 'bush', 'reeds', 'cattail', 'rock_s', 'rock_m', 'rock_l', 'grass', 'flowers', 'log', 'stump', 'lily', 'boat', 'pier'];
+export const DECO_IDS = ['willow', 'willow_weeping', 'birch', 'alder', 'alder_row', 'pine', 'bush', 'reeds', 'cattail', 'rock_s', 'rock_m', 'rock_l', 'grass', 'flowers', 'log', 'stump', 'lily', 'boat', 'pier'];
 
 const cache = new Map();
 const pick = (pal, h) => pal[Math.floor(h * pal.length) % pal.length];
@@ -42,58 +42,165 @@ function blade(S, base, dir, side, len, w, col, tipCol, segs = 2) {
   return pts[pts.length - 1];
 }
 
+function tri2(S, a, b, c, col) {
+  const n = norm([(b[1] - a[1]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[1] - a[1]), (b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2]), (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])]);
+  S.tri(a, b, c, col, 0, n);
+  S.tri(a, c, b, col, 0, mul(n, -1));
+}
+
+function ribbon(S, pts, widths, side, colFn) {
+  const sd = norm(side);
+  for (let i = 0; i < pts.length - 1; i++) {
+    const d = norm(sub(pts[i + 1], pts[i]));
+    const n = norm([sd[1] * d[2] - sd[2] * d[1], sd[2] * d[0] - sd[0] * d[2], sd[0] * d[1] - sd[1] * d[0]]);
+    const a = add(pts[i], mul(sd, -widths[i] / 2)), b = add(pts[i], mul(sd, widths[i] / 2));
+    const c = add(pts[i + 1], mul(sd, widths[i + 1] / 2)), e = add(pts[i + 1], mul(sd, -widths[i + 1] / 2));
+    const col = colFn(i);
+    for (const sg of [1, -1]) {
+      if (widths[i + 1] > 1e-5) S.quad(a, b, c, e, col, 0, mul(n, sg));
+      else S.tri(a, b, c, col, 0, mul(n, sg));
+    }
+  }
+}
+
 function willow() {
   const S = new Soup();
-  const barkC = bark([C('#6b5f50'), C('#5e5446'), C('#776a58')], 1);
-  const trunk = [[0, 0, 0], [0.06, 0.8, 0.02], [0.18, 1.6, 0.05], [0.26, 2.3, 0.08]];
-  tube(S, trunk, [0.44, 0.36, 0.34, 0.4], 8, barkC, 0, 0, { twist: 0.2 });
-  blob(S, [0.27, 2.45, 0.08], [0.5, 0.32, 0.48], 0, (m, w, i) => pick([C('#6e6152'), C('#5f5546')], hh(i, 4)), { jitter: 0.25, seed: 2 });
-  const shoots = [[0.27, 2.5, 0.08, -0.5, 1, 0.3], [0.3, 2.55, 0.1, 0.45, 1, -0.35], [0.2, 2.5, 0, 0.05, 1, 0.55], [0.35, 2.5, 0.12, 0.2, 1, -0.6]];
-  for (const [x, y, z, dx, dy, dz] of shoots) {
-    const d = norm([dx, dy, dz]);
-    tube(S, [[x, y, z], add([x, y, z], mul(d, 0.9)), add([x, y, z], mul(d, 1.7))], [0.09, 0.06, 0.035], 5, barkC, 0, 0);
+  const barkC = (i, j) => pick([C('#6a6052'), C('#5c5347'), C('#776b5a')], hh(i * 13 + j, 1, 5)).clone().multiplyScalar(0.92 + 0.16 * hh(j, i, 3));
+  const trunk = [[0, 0, 0], [0.05, 0.6, 0.03], [0.12, 1.3, 0.06], [0.16, 1.95, 0.07], [0.18, 2.3, 0.08]];
+  tube(S, trunk, [0.52, 0.4, 0.36, 0.38, 0.44], 8, barkC, 0, 0, { twist: 0.3 });
+  const head = [0.18, 2.42, 0.08];
+  const knobs = [[0, 0.05, 0, 0.5, 0.32, 0.48], [0.3, 0.12, 0.18, 0.26, 0.22, 0.24], [-0.28, 0.1, -0.12, 0.25, 0.2, 0.26], [0.05, 0.16, -0.32, 0.24, 0.2, 0.22]];
+  knobs.forEach(([x, y, z, rx, ry, rz], k) => blob(S, add(head, [x, y, z]), [rx, ry, rz], 0, (m, w, i) => pick([C('#6e6354'), C('#5f5648'), C('#7a6e5c')], hh(i, k, 4)), { jitter: 0.3, seed: 2 + k }));
+  const twig = [C('#8a8650'), C('#93844e'), C('#7e7a48'), C('#8e6e4a')];
+  const leaf = [C('#9aaa86'), C('#8c9c78'), C('#a8b694'), C('#82946e')];
+  const N = 30;
+  for (let i = 0; i < N; i++) {
+    const a = i * 2.39996 + 0.3, rr = Math.sqrt((i + 0.5) / N);
+    const p0 = add(head, [Math.cos(a) * rr * 0.36, 0.2 - rr * 0.08, Math.sin(a) * rr * 0.34]);
+    const tilt = 0.06 + rr * 0.6 + (hh(i, 3, 9) - 0.5) * 0.14;
+    const d = norm([Math.cos(a) * Math.sin(tilt), Math.cos(tilt), Math.sin(a) * Math.sin(tilt)]);
+    const L = 2.7 + 1.0 * hh(i, 5, 9) - rr * 0.5;
+    const tc = pick(twig, hh(i, 7, 9));
+    tube(S, [p0, add(p0, mul(d, L * 0.5)), add(p0, mul(d, L))], [0.034, 0.02, 0], 3, tc, 0, 0);
+    const s1 = norm([-d[2], 0, d[0]].map((v, k) => v + (k === 1 ? 0.0001 : 0)));
+    const s2 = norm([d[1] * s1[2] - d[2] * s1[1], d[2] * s1[0] - d[0] * s1[2], d[0] * s1[1] - d[1] * s1[0]]);
+    const lc = pick(leaf, hh(i, 11, 9)), lc2 = pick(leaf, hh(i, 13, 9));
+    const fp = [0.12, 0.55, 1.02].map((f) => add(p0, mul(d, L * f)));
+    ribbon(S, fp, [0.12, 0.26, 0.1], s1, (k) => (k ? lc : shade(lc, 0.88)));
+    ribbon(S, fp, [0.1, 0.24, 0.09], s2, (k) => (k ? lc2 : shade(lc2, 0.9)));
   }
-  const pal = [C('#9fb07a'), C('#8fa36c'), C('#aebd8c'), C('#879a66')];
-  const puffs = [[0.3, 4.1, 0.1, 1.9, 1.35, 1.85, 5], [-0.6, 3.7, 0.5, 1.2, 1.0, 1.2, 6], [1.15, 3.8, -0.35, 1.2, 1.0, 1.15, 7], [0.4, 3.5, -1.0, 1.15, 0.95, 1.1, 8], [0.1, 5.0, 0.05, 1.25, 0.8, 1.2, 9]];
-  for (const [x, y, z, rx, ry, rz, sd] of puffs) blob(S, [x, y, z], [rx, ry, rz], 1, (m, w, i) => leafCol(pal, m, w, i, sd, 0.28), { jitter: 0.16, seed: sd });
+  return S;
+}
+
+function willowWeeping() {
+  const S = new Soup();
+  const barkC = (i, j) => pick([C('#5e554a'), C('#6a5f52'), C('#53493f')], hh(i * 7 + j, 2, 6)).clone().multiplyScalar(0.92 + 0.16 * hh(j, i, 4));
+  tube(S, [[0, 0, 0], [0.04, 0.9, 0.02], [0.1, 1.8, 0.05], [0.14, 2.3, 0.06]], [0.46, 0.36, 0.33, 0.34], 8, barkC, 0, 0, { twist: 0.2 });
+  const base = [0.14, 2.25, 0.06];
+  const limbs = [[0.4, 2.2, 1.0], [2.5, 2.4, 0.9], [4.4, 2.1, 1.05], [1.4, 1.2, 1.25]];
+  const tops = [];
+  for (const [a, out, up] of limbs) {
+    const d = [Math.cos(a), 0, Math.sin(a)];
+    const p1 = add(base, add(mul(d, out * 0.35), [0, up * 1.5, 0]));
+    const p2 = add(base, add(mul(d, out * 0.8), [0, up * 2.9, 0]));
+    const p3 = add(base, add(mul(d, out), [0, up * 3.35, 0]));
+    tube(S, [base, p1, p2, p3], [0.2, 0.14, 0.09, 0.05], 6, barkC, 0, 0);
+    tops.push(p3);
+  }
+  const pal = [C('#a4b06c'), C('#96a45e'), C('#b2bc7e'), C('#8a9a58')];
+  const crownY = 5.9;
+  blob(S, [0.2, crownY - 0.15, 0.05], [2.5, 0.75, 2.4], 1, (m, w, i) => leafCol(pal, m, w, i, 41, 0.25), { jitter: 0.18, seed: 41, flatBottom: -0.2 });
+  const ring = (n, R, y0, len, seed) => {
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + (hh(i, 1, seed) - 0.5) * 0.25;
+      const r = R * (0.88 + 0.24 * hh(i, 2, seed));
+      const out = [Math.cos(a), 0, Math.sin(a)];
+      const side = [-Math.sin(a), 0, Math.cos(a)];
+      const top = [0.2 + out[0] * r, y0 - 0.25 * (r / R) ** 2 + 0.3 * hh(i, 3, seed), 0.05 + out[2] * r];
+      const L = len * (0.8 + 0.35 * hh(i, 4, seed));
+      const sway = (hh(i, 5, seed) - 0.5) * 0.5;
+      const pts = [0, 0.25, 0.55, 0.82, 1].map((f) => add(top, add(mul(out, 0.55 * Math.sin(f * 2.2)), add(mul(side, sway * f * f), [0, -L * f, 0]))));
+      const w = 0.34 + 0.12 * hh(i, 6, seed);
+      const c = pick(pal, hh(i, 7, seed));
+      ribbon(S, pts, [w, w * 1.1, w * 0.9, w * 0.55, 0], side, (k) => mixC(c, C('#c4ca90'), k * 0.12).multiplyScalar(1 - (k === 0 ? 0.08 : 0)));
+    }
+  };
+  ring(30, 2.85, crownY, 4.3, 7);
+  ring(14, 1.7, crownY + 0.35, 3.2, 8);
   return S;
 }
 
 function birch() {
   const S = new Soup();
-  const white = C('#e9e5dc'), black = C('#26241f'), grey = C('#cfcac0');
+  const white = C('#e6e2d8'), black = C('#2a2722'), grey = C('#c4beb2');
   const col = (i, j) => {
-    if (i === 0) return hh(j, 1, 2) < 0.6 ? black : shade(grey, 0.7);
+    if (i < 2) return hh(i * 9 + j, 1, 2) < 0.55 + (1 - i) * 0.3 ? black : shade(grey, 0.72);
     const h = hh(i * 7 + j, 3, 11);
-    return h < 0.2 ? black : h < 0.35 ? grey : white;
+    return h < 0.2 ? black : h < 0.32 ? grey : white.clone().multiplyScalar(0.96 + 0.06 * hh(j, i, 5));
   };
-  const pts = bend([[0, 0, 0], [0, 0.6, 0], [0, 1.8, 0], [0, 3.2, 0], [0, 4.6, 0], [0, 6.0, 0], [0, 7.4, 0]], [0.012, -0.006]);
-  tube(S, pts, [0.17, 0.14, 0.125, 0.11, 0.09, 0.065, 0.03], 6, col, 0, 0);
-  const brC = (i, j) => (hh(i, j, 4) < 0.3 ? black : shade(white, 0.9));
-  for (const [y, a, l] of [[3.6, 0.6, 1.4], [4.5, 2.6, 1.3], [5.3, 4.4, 1.1]]) {
-    const d = norm([Math.cos(a), 0.9, Math.sin(a)]);
-    const p0 = [pts[3][0] + (y - 3.2) * 0.02, y, pts[3][2]];
-    tube(S, [p0, add(p0, mul(d, l * 0.55)), add(p0, mul(norm(add(d, [0, -0.2, 0])), l))], [0.05, 0.035, 0.015], 4, brC, 0, 0);
-  }
-  const pal = [C('#8fbf5e'), C('#9fcd6b'), C('#7fae52'), C('#a8d276')];
-  const puffs = [[0.1, 6.4, 0.05, 1.25, 1.5, 1.2, 3], [0.9, 5.2, 0.5, 0.95, 1.15, 0.9, 4], [-0.85, 5.0, -0.35, 0.95, 1.2, 0.95, 5], [0.25, 4.6, -0.95, 0.85, 1.0, 0.85, 6]];
-  for (const [x, y, z, rx, ry, rz, sd] of puffs) blob(S, [x, y, z], [rx, ry, rz], 1, (m, w, i) => leafCol(pal, m, w, i, sd, 0.22), { jitter: 0.18, seed: sd });
+  const pts = [];
+  for (let i = 0; i <= 9; i++) pts.push([0.18 * Math.sin(i * 0.45) * (i / 9), i * 0.86, 0.1 * (i / 9) ** 2]);
+  tube(S, pts, pts.map((_, i) => 0.17 * (1 - i / 10.5) + 0.012), 6, col, 0, 0);
+  const brC = (i, j) => (hh(i, j, 4) < 0.25 ? black : shade(white, 0.88));
+  const pal = [C('#93b468'), C('#a2c076'), C('#86a85e'), C('#acc684')];
+  const hang = [C('#9cba70'), C('#8eae64')];
+  const branches = [[3.4, 0.4, 1.7, 0.55], [4.1, 2.5, 1.6, 0.6], [4.8, 4.3, 1.5, 0.65], [5.5, 1.5, 1.3, 0.75], [6.2, 3.4, 1.1, 0.8], [6.9, 5.4, 0.9, 0.9]];
+  branches.forEach(([y, a, l, up], n) => {
+    const k = Math.min(8, Math.floor(y / 0.86));
+    const p0 = vl(pts[k], pts[k + 1], y / 0.86 - k);
+    const d = norm([Math.cos(a), up, Math.sin(a)]);
+    const p1 = add(p0, mul(d, l * 0.6));
+    const p2 = add(p1, mul(norm(add(d, [0, -0.5, 0])), l * 0.5));
+    tube(S, [p0, p1, p2], [0.055, 0.035, 0.012], 4, brC, 0, 0);
+    const cc = add(p2, [0, 0.1, 0]);
+    blob(S, cc, [1.0 - n * 0.05, 0.8, 0.95 - n * 0.05], 1, (m, w, i) => leafCol(pal, m, w, i, 50 + n, 0.25), { jitter: 0.32, seed: 50 + n });
+    for (let t = 0; t < 3; t++) {
+      const ang = a + (t - 1) * 0.9;
+      const q = add(cc, [Math.cos(ang) * 0.5, -0.25, Math.sin(ang) * 0.5]);
+      const side = [-Math.sin(ang), 0, Math.cos(ang)];
+      const L = 1.1 + 0.6 * hh(n, t, 3);
+      ribbon(S, [q, add(q, [Math.cos(ang) * 0.12, -L * 0.5, Math.sin(ang) * 0.12]), add(q, [Math.cos(ang) * 0.16, -L, Math.sin(ang) * 0.16])], [0.26, 0.2, 0], side, () => pick(hang, hh(n, t, 7)));
+    }
+  });
+  blob(S, add(pts[9], [0, 0.3, 0]), [0.8, 0.95, 0.78], 1, (m, w, i) => leafCol(pal, m, w, i, 60, 0.22), { jitter: 0.3, seed: 60 });
   return S;
+}
+
+function vl(a, b, t) {
+  return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+}
+
+function alderInto(S, o, sc, seed, full) {
+  const barkC = bark([C('#4a4640'), C('#3f3c37'), C('#55504a')], 3 + seed);
+  const P = (p) => [o[0] + p[0] * sc, o[1] + p[1] * sc, o[2] + p[2] * sc];
+  const pts = bend([[0, 0, 0], [0, 1.4, 0], [0, 3.0, 0], [0, 4.6, 0], [0, 6.4, 0]], [0.01 * (hh(seed, 1) - 0.5), 0.01 * (hh(seed, 2) - 0.5)]).map(P);
+  tube(S, pts, [0.25, 0.2, 0.16, 0.11, 0.05].map((r) => r * sc), full ? 7 : 6, barkC, 0, 0);
+  if (full) {
+    for (const [y, a] of [[2.6, 0.9], [3.3, 3.4], [4.0, 5.2]]) {
+      const d = norm([Math.cos(a), 0.7, Math.sin(a)]);
+      const p0 = P([0, y, 0]);
+      tube(S, [p0, add(p0, mul(d, 0.8 * sc)), add(p0, mul(d, 1.4 * sc))], [0.07 * sc, 0.045 * sc, 0.02 * sc], 4, barkC, 0, 0);
+    }
+  }
+  const pal = [C('#4e7238'), C('#587c40'), C('#466632'), C('#628446')];
+  const puffs = [[0, 4.2, 0, 1.75, 1.6, 1.7], [0.15, 5.9, -0.1, 1.45, 1.4, 1.4], [-0.1, 7.2, 0.1, 0.95, 1.05, 0.95], [0.9, 3.4, 0.6, 1.0, 0.85, 0.95]];
+  puffs.slice(0, full ? 4 : 3).forEach(([x, y, z, rx, ry, rz], k) => {
+    const sd = 3 + k + seed * 10;
+    blob(S, P([x, y, z]), [rx * sc, ry * sc, rz * sc], 1, (m, w, i) => leafCol(pal, m, w, i, sd, 0.3), { jitter: 0.17, seed: sd });
+  });
 }
 
 function alder() {
   const S = new Soup();
-  const barkC = bark([C('#4a4640'), C('#3f3c37'), C('#55504a')], 3);
-  const pts = bend([[0, 0, 0], [0, 1.0, 0], [0, 2.4, 0], [0, 3.8, 0], [0, 5.4, 0], [0, 6.8, 0]], [0.008, 0.01]);
-  tube(S, pts, [0.26, 0.21, 0.18, 0.15, 0.1, 0.05], 7, barkC, 0, 0);
-  for (const [y, a] of [[2.6, 0.9], [3.3, 3.4], [4.0, 5.2]]) {
-    const d = norm([Math.cos(a), 0.7, Math.sin(a)]);
-    const p0 = [0, y, 0];
-    tube(S, [p0, add(p0, mul(d, 0.8)), add(p0, mul(d, 1.4))], [0.07, 0.045, 0.02], 4, barkC, 0, 0);
-  }
-  const pal = [C('#4c7536'), C('#57813f'), C('#436a30'), C('#5f8a45')];
-  const puffs = [[0, 4.2, 0, 1.75, 1.6, 1.7, 3], [0.15, 5.9, -0.1, 1.45, 1.4, 1.4, 4], [-0.1, 7.2, 0.1, 0.95, 1.05, 0.95, 5], [0.9, 3.4, 0.6, 1.0, 0.85, 0.95, 6]];
-  for (const [x, y, z, rx, ry, rz, sd] of puffs) blob(S, [x, y, z], [rx, ry, rz], 1, (m, w, i) => leafCol(pal, m, w, i, sd, 0.3), { jitter: 0.15, seed: sd });
+  alderInto(S, [0, 0, 0], 1, 0, true);
+  return S;
+}
+
+function alderRow() {
+  const S = new Soup();
+  alderInto(S, [-3.6, 0, 0.3], 0.92, 1, false);
+  alderInto(S, [0, 0, -0.2], 1.06, 2, false);
+  alderInto(S, [3.8, 0, 0.25], 0.84, 3, false);
   return S;
 }
 
@@ -126,36 +233,61 @@ function bush() {
 
 function reeds() {
   const S = new Soup();
-  const stem = C('#a7a462'), stemD = C('#8a8a4e'), leaf = C('#8fa456'), plume = [C('#7a5e4c'), C('#8a6a56'), C('#6c5444')];
-  for (let i = 0; i < 6; i++) {
-    const a = i * 2.4 + 0.3, r = 0.08 + 0.25 * hh(i, 1, 4);
-    const base = [Math.cos(a) * r, 0, Math.sin(a) * r];
-    const h = 1.7 + 0.7 * hh(i, 2, 4);
-    const lean = [Math.cos(a) * 0.12 * hh(i, 5), 0, Math.sin(a) * 0.12 * hh(i, 6)];
-    const top = add(base, [lean[0] * 2, h, lean[2] * 2]);
-    tube(S, [base, add(base, [lean[0] * 0.6, h * 0.55, lean[2] * 0.6]), top], [0.022, 0.016, 0.01], 3, (k) => (k ? stem : stemD), 0, 0);
-    const pd = norm([lean[0] + 0.15 * Math.cos(a + 1), 1, lean[2] + 0.15 * Math.sin(a + 1)]);
-    tube(S, [add(top, [0, -0.02, 0]), add(top, mul(pd, 0.16)), add(top, add(mul(pd, 0.34), [0.06 * Math.cos(a), -0.06, 0.06 * Math.sin(a)]))], [0.03, 0.045, 0], 3, pick(plume, hh(i, 9)), 0, 0);
-    if (i % 2 === 0) blade(S, add(base, [0, h * 0.35, 0]), [Math.cos(a + 0.8), 0.9, Math.sin(a + 0.8)], [Math.sin(a + 0.8), 0, -Math.cos(a + 0.8)], 0.7, 0.03, leaf, shade(leaf, 1.15), 1);
+  const green = [C('#7c8c4c'), C('#8a9654'), C('#6f8044')], straw = [C('#b6a66c'), C('#a8986a'), C('#c2b27c')];
+  const leaf = [C('#7a8e4c'), C('#889a58')], plume = [C('#6a5046'), C('#7a5c50'), C('#5e463c')];
+  const N = 150;
+  for (let i = 0; i < N; i++) {
+    const rx = (hh(i, 1, 21) - 0.5) * 2, rz = (hh(i, 2, 21) - 0.5) * 2;
+    const k = 1 - 0.35 * (rx * rx + rz * rz);
+    const base = [rx * 1.5, 0, rz * 0.6];
+    const h = (1.5 + 1.1 * hh(i, 3, 21)) * Math.max(0.6, k);
+    const lean = [(hh(i, 4, 21) - 0.5) * 0.35 + rx * 0.12, 0, (hh(i, 5, 21) - 0.5) * 0.35 + rz * 0.1];
+    const a = hh(i, 6, 21) * Math.PI;
+    const w = 0.022 + 0.012 * hh(i, 7, 21);
+    const b0 = add(base, [Math.cos(a) * w, 0, Math.sin(a) * w]), b1 = add(base, [-Math.cos(a) * w, 0, -Math.sin(a) * w]);
+    const top = add(base, [lean[0] * h, h, lean[2] * h]);
+    const col = hh(i, 8, 21) < 0.38 ? pick(straw, hh(i, 9, 21)) : pick(green, hh(i, 10, 21));
+    tri2(S, b0, b1, top, col.clone().multiplyScalar(0.92 + 0.12 * hh(i, 11, 21)));
+    if (i < 12) {
+      const pd = norm([lean[0] + 0.3 * Math.cos(a), 1, lean[2] + 0.3 * Math.sin(a)]);
+      const p0 = add(top, mul(pd, -0.06));
+      tube(S, [p0, add(p0, mul(pd, 0.14)), add(p0, add(mul(pd, 0.3), [0.07 * Math.cos(a), -0.08, 0.07 * Math.sin(a)]))], [0.03, 0.05, 0], 3, pick(plume, hh(i, 12, 21)), 0, 0);
+    }
+    if (i % 4 === 0) {
+      const la = a + 1.2;
+      const lb = add(base, [0, h * (0.25 + 0.2 * hh(i, 13, 21)), 0]);
+      const lt = add(lb, [Math.cos(la) * 0.55, 0.45 + 0.3 * hh(i, 14, 21), Math.sin(la) * 0.55]);
+      const ls = [-Math.sin(la) * 0.03, 0, Math.cos(la) * 0.03];
+      tri2(S, add(lb, ls), sub(lb, ls), lt, pick(leaf, hh(i, 15, 21)));
+    }
   }
   return S;
 }
 
 function cattail() {
   const S = new Soup();
-  const leaf = C('#6f9244'), leafT = C('#8fae5c'), head = C('#5a3a24'), stem = C('#7d9a4c');
-  for (let i = 0; i < 6; i++) {
-    const a = i * 1.05 + 0.2;
-    blade(S, [Math.cos(a) * 0.06, 0, Math.sin(a) * 0.06], [Math.cos(a) * 0.25, 1, Math.sin(a) * 0.25], [-Math.sin(a), 0, Math.cos(a)], 1.3 + 0.4 * hh(i, 2, 7), 0.045, leaf, leafT, 2);
+  const leaf = [C('#6f8a48'), C('#7c9652'), C('#66803f'), C('#8c9c5c')], head = C('#5c3c26'), stem = C('#7a9050');
+  for (let i = 0; i < 80; i++) {
+    const rx = (hh(i, 1, 31) - 0.5) * 2, rz = (hh(i, 2, 31) - 0.5) * 2;
+    const base = [rx * 0.9, 0, rz * 0.45];
+    const a = hh(i, 3, 31) * Math.PI;
+    const h = 1.2 + 0.9 * hh(i, 4, 31);
+    const out = 0.12 + 0.3 * hh(i, 5, 31);
+    const lean = [Math.cos(a + 1.57) * out * Math.sign(rx + 0.01), 0, Math.sin(a + 1.57) * out];
+    const w = 0.03 + 0.02 * hh(i, 6, 31);
+    const b0 = add(base, [Math.cos(a) * w, 0, Math.sin(a) * w]), b1 = add(base, [-Math.cos(a) * w, 0, -Math.sin(a) * w]);
+    const tip = add(base, [lean[0] * h, h, lean[2] * h]);
+    const c = pick(leaf, hh(i, 7, 31)).clone().multiplyScalar(0.92 + 0.14 * hh(i, 8, 31));
+    tri2(S, b0, b1, tip, c);
   }
-  for (let i = 0; i < 3; i++) {
-    const a = i * 2.1 + 0.6, r = 0.05;
-    const base = [Math.cos(a) * r, 0, Math.sin(a) * r];
-    const h = 1.45 + 0.3 * hh(i, 4, 7);
-    const top = add(base, [Math.cos(a) * 0.08, h, Math.sin(a) * 0.08]);
-    tube(S, [base, top], [0.014, 0.011], 3, stem, 0, 0);
-    const hb = add(top, [0, 0.02, 0]);
-    tube(S, [hb, add(hb, [0, 0.04, 0]), add(hb, [0, 0.24, 0])], [0.03, 0.043, 0.03], 5, head, 0, 0, { capStart: true, capEnd: true });
+  for (let i = 0; i < 11; i++) {
+    const rx = (hh(i, 11, 31) - 0.5) * 1.4, rz = (hh(i, 12, 31) - 0.5) * 0.6;
+    const base = [rx, 0, rz];
+    const h = 1.5 + 0.45 * hh(i, 13, 31);
+    const top = add(base, [(hh(i, 14, 31) - 0.5) * 0.25, h, (hh(i, 15, 31) - 0.5) * 0.2]);
+    tri2(S, add(base, [0.012, 0, 0]), add(base, [-0.012, 0, 0]), top, stem);
+    const hb = add(top, [0, -0.02, 0]);
+    tube(S, [hb, add(hb, [0, 0.04, 0]), add(hb, [0, 0.24, 0])], [0.03, 0.044, 0.03], 5, head.clone().multiplyScalar(0.9 + 0.2 * hh(i, 16, 31)), 0, 0, { capStart: true, capEnd: true });
     tube(S, [add(hb, [0, 0.24, 0]), add(hb, [0, 0.4, 0])], [0.007, 0], 3, C('#9a8a5c'), 0, 0);
   }
   return S;
@@ -379,7 +511,7 @@ function pier() {
 const SINK = { rock_s: 0.03, rock_m: 0.06, rock_l: 0.12, bush: 0.04, stump: 0.03, log: 0.03, grass: 0, flowers: 0, boat: 0 };
 
 const BUILD = {
-  willow, birch, alder, pine, bush, reeds, cattail,
+  willow, willow_weeping: willowWeeping, birch, alder, alder_row: alderRow, pine, bush, reeds, cattail,
   rock_s: () => rock(0.42, 1, [[0, 0.32, 0, 0.62, 0.45, 0.55, 0, 1], [0.42, 0.18, 0.2, 0.32, 0.26, 0.3, 0, 2]]),
   rock_m: () => rock(0.95, 2, [[0, 0.4, 0, 0.62, 0.5, 0.55, 1, 3]]),
   rock_l: () => rock(1.8, 3, [[0, 0.42, 0, 0.62, 0.55, 0.52, 1, 4], [0.48, 0.2, 0.35, 0.3, 0.26, 0.28, 0, 5]]),
@@ -392,6 +524,10 @@ export function decoGeometry(id) {
     if (SINK[id] !== undefined) {
       const dy = -S.bounds().min[1] - SINK[id];
       S.map((p) => [p[0], p[1] + dy, p[2]]);
+    }
+    for (let i = 0; i < S.c.length; i += 3) {
+      const L = 0.2126 * S.c[i] + 0.7152 * S.c[i + 1] + 0.0722 * S.c[i + 2];
+      for (let a = 0; a < 3; a++) S.c[i + a] = L + (S.c[i + a] - L) * 0.86;
     }
     const g = S.geometry();
     g.name = 'deco_' + id;

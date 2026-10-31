@@ -25,10 +25,11 @@ export class Physics {
     this.onZone = null;
   }
 
-  addIsland(collider) {
+  addIsland(collider, field) {
     const R = this.R;
     const body = this.world.createRigidBody(R.RigidBodyDesc.fixed());
-    const cd = R.ColliderDesc.trimesh(collider.vertices, collider.indices).setFriction(0.8).setCollisionGroups(groups(G.WORLD, G.FISH | G.PLAYER));
+    const cd = (field ? R.ColliderDesc.heightfield(field.n, field.n, field.heights, { x: field.size, y: 1, z: field.size }) : R.ColliderDesc.trimesh(collider.vertices, collider.indices))
+      .setFriction(0.8).setCollisionGroups(groups(G.WORLD, G.FISH | G.PLAYER));
     this.world.createCollider(cd, body);
     this.island = body;
   }

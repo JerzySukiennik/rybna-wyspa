@@ -15,8 +15,9 @@ import { WeatherFx } from '../world/weatherfx.js';
 import { Grass } from '../world/grass.js';
 import { buildDecor } from '../world/decor.js';
 import { buildStructures, sellHole, redrawSigns } from '../world/structures.js';
+import { buildRiver } from '../world/river.js';
 import { BlockWorld } from '../world/blockworld.js';
-import { blockMaterial, U, waterLight } from '../render/materials.js';
+import { blockMaterial, addWet, U, waterLight } from '../render/materials.js';
 import { FishView } from '../render/fishview.js';
 import { Fx } from '../render/fx.js';
 import { Avatars } from '../render/avatars.js';
@@ -79,8 +80,9 @@ export class Game {
     r.setSize(innerWidth, innerHeight, false);
     r.shadowMap.enabled = true;
     r.shadowMap.type = THREE.PCFShadowMap;
-    r.toneMapping = THREE.NeutralToneMapping;
-    r.toneMappingExposure = 1.0;
+    const tm = new URLSearchParams(location.search).get('tm');
+    r.toneMapping = tm === 'neutral' ? THREE.NeutralToneMapping : THREE.ACESFilmicToneMapping;
+    r.toneMappingExposure = tm === 'neutral' ? 1.0 : 0.9;
     r.info.autoReset = false;
     this.renderer = r;
     this.scene = new THREE.Scene();
@@ -99,7 +101,7 @@ export class Game {
     progress(0.34, 'Wyspa…');
     const isl = buildIsland([sellHole()]);
     this.scene.add(isl.mesh);
-    this.phys.addIsland(isl.collider);
+    this.phys.addIsland(isl.collider, isl.field);
     this.structBodies.add(this.phys.island.handle);
     this.water = new Water(this.scene, isl.heightTex, isl.span);
     this.grass = new Grass(this.scene, isl.heightTex);
@@ -107,12 +109,19 @@ export class Game {
     this.wfx = new WeatherFx(this.scene);
     this.wfx.onThunder = () => this.audio.play('thunder', { vol: 0.9 });
     this.blockMat = blockMaterial();
+    this.river = buildRiver(this.scene, this.blockMat);
     this.structs = buildStructures(this.scene, this.phys, this.blockMat, this.models);
     if (document.fonts) document.fonts.load('700 64px Oswald').then(() => redrawSigns()).catch(() => {});
-    const decoMat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
+    const decoMat = addWet(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }));
     progress(0.46, 'Drzewa i trzciny…');
-    this.decor = buildDecor(this.scene, this.phys, this.models, decoMat);
+    this.decor = buildDecor(this.scene, this.phys, this.models, decoMat, this.blockMat);
     this.phys.world.forEachRigidBody((b) => { if (b.isFixed()) this.structBodies.add(b.handle); });
+    this.lamps = [...(this.structs.lamps || []), ...(this.decor.lamps || [])].slice(0, 3).map((p) => {
+      const l = new THREE.PointLight('#ffb06a', 0, 16, 2);
+      l.position.copy(p);
+      this.scene.add(l);
+      return l;
+    });
 
     this.blocks = new BlockWorld(this.scene, this.phys);
     this.blocks.mat = this.blockMat;
@@ -134,6 +143,9 @@ export class Game {
 
     this.input = new Input(this.canvas);
     this.input.onLockChange = (on) => this.onLock(on);
+    this.input.onKey = (code) => this.uiKey(code);
+    this.input.canLock = () => this.playing && !this.paused && !this.panels.open && !this.panels.shopOpen;
+    this.input.onLockError = () => this.lockFailed();
     this.hud = new Hud();
     this.hud.icons = this.icons;
     this.panels = new Panels(this);
@@ -167,7 +179,7 @@ export class Game {
       fragmentShader: `uniform sampler2D tDiffuse; uniform float uSat; uniform float uVig; uniform float uWarm; varying vec2 vUv;
         void main(){ vec4 c = texture2D(tDiffuse, vUv); float l = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
         c.rgb = mix(vec3(l), c.rgb, uSat);
-        c.rgb += vec3(-0.012, 0.004, 0.016) * (1.0 - smoothstep(0.0, 0.45, l)) + vec3(0.016, 0.008, -0.012) * smoothstep(0.5, 1.2, l) * (1.0 + uWarm);
+        c.rgb += vec3(-0.003, 0.0, 0.004) * (1.0 - smoothstep(0.0, 0.45, l)) + vec3(0.014, 0.007, -0.01) * smoothstep(0.5, 1.2, l) * (1.0 + uWarm);
         float d = distance(vUv, vec2(0.5)); c.rgb *= mix(1.0, 1.0 - uVig, smoothstep(0.32, 0.82, d));
         gl_FragColor = c; }`,
     });
@@ -184,12 +196,12 @@ export class Game {
     const c = new THREE.Color();
     for (let i = 0; i < p.count; i++) {
       const y = p.getY(i) / 10;
-      c.set(y > 0 ? '#bfe4ff' : '#9a8f6a').lerp(new THREE.Color(y > 0.4 ? '#3d8fe6' : '#e9f4ff'), Math.abs(y));
+      c.set(y > 0 ? '#d6e0e0' : '#6f6a4c').lerp(new THREE.Color(y > 0 ? '#6d9bc9' : '#4c4a36'), Math.min(1, Math.abs(y) * 1.4));
       cols.push(c.r, c.g, c.b);
     }
     g.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
     s.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide })));
-    const sun = new THREE.Mesh(new THREE.SphereGeometry(1.2, 8, 6), new THREE.MeshBasicMaterial({ color: '#fff6dc' }));
+    const sun = new THREE.Mesh(new THREE.SphereGeometry(1.2, 8, 6), new THREE.MeshBasicMaterial({ color: '#ffe3bc' }));
     sun.position.set(5, 7, 3);
     s.add(sun);
     this.scene.environment = pm.fromScene(s, 0.04).texture;
@@ -565,8 +577,42 @@ export class Game {
   }
 
   onLock(on) {
+    clearTimeout(this.lockT);
     if (on) { this.paused = false; document.getElementById('pause').classList.add('hidden'); }
     else if (this.playing && !this.panels.open && !this.panels.shopOpen) this.pause(true);
+  }
+
+  relock() {
+    this.input.lock();
+    clearTimeout(this.lockT);
+    this.lockT = setTimeout(() => { if (!this.input.locked) this.lockFailed(); }, 450);
+  }
+
+  lockFailed() {
+    if (this.playing && !this.input.locked && !this.paused && !this.panels.open && !this.panels.shopOpen && !this.settings.nolock) this.pause(true);
+  }
+
+  uiKey(code) {
+    if (!this.playing || !this.store || this.paused) return false;
+    if (code === 'Tab') {
+      if (this.panels.shopOpen) this.panels.toggleShop(false);
+      const on = !this.panels.open;
+      this.panels.toggle(on);
+      if (on) this.input.unlock(); else this.relock();
+      this.audio.play(on ? 'ui_open' : 'ui_close');
+      return true;
+    }
+    if (code === 'Escape') {
+      if (this.panels.open) { this.panels.toggle(false); this.relock(); this.audio.play('ui_close'); return true; }
+      if (this.panels.shopOpen) { this.panels.toggleShop(false); this.relock(); this.audio.play('ui_close'); return true; }
+      return false;
+    }
+    if (code === 'KeyE') {
+      if (this.panels.shopOpen) { this.panels.toggleShop(false); this.relock(); this.audio.play('ui_close'); return true; }
+      if (this.nearShop() && !this.panels.open) { this.panels.toggleShop(true); this.input.unlock(); this.audio.play('ui_open'); return true; }
+      return false;
+    }
+    return false;
   }
 
   pause(on) {
@@ -585,19 +631,7 @@ export class Game {
 
   handleKeys(inp) {
     for (const k of inp.pressed) {
-      if (k === 'Tab') {
-        if (this.panels.shopOpen) this.panels.toggleShop(false);
-        const on = !this.panels.open;
-        this.panels.toggle(on);
-        if (on) this.input.unlock(); else this.input.lock();
-        this.audio.play(on ? 'ui_open' : 'ui_close');
-      } else if (k === 'Escape') {
-        if (this.panels.open) { this.panels.toggle(false); this.input.lock(); }
-        else if (this.panels.shopOpen) { this.panels.toggleShop(false); this.input.lock(); }
-      } else if (k === 'KeyE') {
-        if (this.panels.shopOpen) { this.panels.toggleShop(false); this.input.lock(); this.audio.play('ui_close'); }
-        else if (this.nearShop() && !this.panels.open) { this.panels.toggleShop(true); this.input.unlock(); this.audio.play('ui_open'); }
-      } else if (k.startsWith('Digit') && this.input.locked) {
+      if (k.startsWith('Digit') && this.input.locked) {
         const n = +k.slice(5);
         if (n >= 1 && n <= 9) { this.selSlot = n - 1; this.audio.play('ui_tab', { vol: 0.4 }); }
       } else if (k === 'KeyF' && this.settings.debug) {
@@ -644,6 +678,7 @@ export class Game {
       if (!active && this.selSlot === 0) this.hud.prompt('');
       this.hands.frame(dt);
       this.hud.hotbar(this.hotbarSlots, this.selSlot, this.store.state.wh, this.icons);
+      this.hud.el.hud.classList.toggle('under', !!(this.panels.open || this.panels.shopOpen));
       const cap = upVal(this.store.state.up, 'stos');
       this.hud.stack(this.myStack(), cap, this.store.state.mult || 1);
       this.player.carry = Math.min(1, this.myStack().length / Math.max(8, cap));
@@ -726,7 +761,7 @@ export class Game {
     if (tmpV.z > 1) { this.hud.fishLabel(null); return; }
     const sx = (tmpV.x * 0.5 + 0.5) * innerWidth, sy = (-tmpV.y * 0.5 + 0.5) * innerHeight;
     const meta = this.role === 'leader' && this.sim && this.sim.fish.get(id) ? this.sim.fish.get(id) : r.meta;
-    this.hud.fishLabel(meta, this.store.state.mult || 1, sx, sy - 6);
+    this.hud.fishLabel(meta, this.store.state.mult || 1, innerWidth / 2 + Math.max(-60, Math.min(60, sx - innerWidth / 2)), sy);
   }
 
   envUpdate(dt) {
@@ -736,12 +771,14 @@ export class Game {
     const w = this.settings.weather ? { id: this.settings.weather, left: 99, len: 99 } : weatherAt(tSec, seed);
     const night = isNight(phase);
     this.sky.setWeather(w.id, Math.min(1, dt * 0.5));
-    const flash = this.wfx.update(w.id, dt, this.time, camPos, night);
+    const flash = this.wfx.update(w.id, dt, this.time, camPos, night, this.light);
     const L = this.sky.update(phase, dt, this.time, camPos, flash);
     this.water.update(this.time, L);
     if (this.grassDirty) { this.grassDirty = false; this.grass.setShapes(this.grassShapes()); }
     this.grass.update(this.time, this.player.feet, ['wichura', 'burza'].includes(w.id) ? 2.6 : 1, ['mroz', 'sniezyca'].includes(w.id) ? 0.8 : 0);
     U.lamp.value = L.lampK;
+    U.wet.value += (L.wet - U.wet.value) * Math.min(1, dt * (L.wet > U.wet.value ? 0.5 : 0.05));
+    for (const l of this.lamps) l.intensity = 9 * L.lampK;
     this.scene.environmentIntensity = 0.08 + 0.92 * Math.pow(1 - L.night, 1.5);
     waterLight.value.setScalar(0.35 + 0.65 * (1 - L.night * 0.75));
     this.light = L;
@@ -775,7 +812,7 @@ export class Game {
     else if ((s.earned || 0) < 400) t = 'Kupuj więcej w <b>SKLEPIE</b> <kbd>E</kbd>. Sieć rybacka łowi sama, a rynny z wodą nie psują ryb.';
     else if (!this.tipDone) { this.tipDone = true; this.hud.toast('Samouczek zaliczony. Tab otwiera rejestr farmy: zadania, album, ranking.', 'gold'); }
     const el = document.getElementById('tip');
-    if (!t || this.panels.open || this.panels.shopOpen) { el.classList.add('hidden'); return; }
+    if (!t) { el.classList.add('hidden'); return; }
     el.classList.remove('hidden');
     if (this.lastTip !== t) { document.getElementById('tip-t').innerHTML = t; this.lastTip = t; }
   }

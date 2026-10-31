@@ -49,7 +49,7 @@ export class Avatars {
     root.add(nickSprite(nick, color));
     this.scene.add(root);
     const part = (n) => body.getObjectByName(n);
-    a = { pid, nick, color, root, body, parts: { armL: part('armL'), armR: part('armR'), legL: part('legL'), legR: part('legR'), head: part('head') }, buf: [], walk: 0, pos: new THREE.Vector3(), yaw: 0, pitch: 0, speed: 0, stack: [] };
+    a = { pid, nick, color, root, body, parts: { armL: part('armL'), armR: part('armR'), legL: part('legL'), legR: part('legR'), head: part('head'), foreL: part('forearmL'), foreR: part('forearmR'), shinL: part('shinL'), shinR: part('shinR') }, buf: [], walk: 0, pos: new THREE.Vector3(), yaw: 0, pitch: 0, speed: 0, stack: [] };
     this.list.set(pid, a);
     return a;
   }
@@ -98,9 +98,13 @@ export class Avatars {
       const carrying = a.stack.length > 0;
       if (P.legL) P.legL.rotation.x = sw;
       if (P.legR) P.legR.rotation.x = -sw;
-      if (P.armL) P.armL.rotation.x = carrying ? -1.15 : -sw * 0.8;
-      if (P.armR) P.armR.rotation.x = carrying ? -1.15 : sw * 0.8;
+      if (P.armL) P.armL.rotation.x = carrying ? 1.05 : -sw * 0.8;
+      if (P.armR) P.armR.rotation.x = carrying ? 1.05 : sw * 0.8;
       if (P.head) P.head.rotation.x = -(s1.pitch || 0) * 0.5;
+      if (P.shinL) P.shinL.rotation.x = -(Math.max(0, -sw) * 1.2 + 0.05);
+      if (P.shinR) P.shinR.rotation.x = -(Math.max(0, sw) * 1.2 + 0.05);
+      if (P.foreL) P.foreL.rotation.x = carrying ? 0.45 : 0.22 + Math.max(0, -sw) * 0.5;
+      if (P.foreR) P.foreR.rotation.x = carrying ? 0.45 : 0.22 + Math.max(0, sw) * 0.5;
       let y = 1.05;
       const fwd = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
       for (let n = 0; n < a.stack.length; n++) {

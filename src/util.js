@@ -21,8 +21,22 @@ export function fmtNum(v, dec = 2) {
   return (neg ? '-' : '') + group(i) + (f ? ',' + f : '');
 }
 
-export function fmtZl(v, dec = 2) {
-  return fmtNum(v, v >= 1000 ? 0 : dec) + ' zł';
+const ZL_UNITS = [[1e18, 'tld'], [1e15, 'bld'], [1e12, 'bln'], [1e9, 'mld'], [1e6, 'mln'], [1e3, 'tys.']];
+
+function sig3(x) {
+  const s = x >= 100 ? x.toFixed(0) : x >= 10 ? x.toFixed(1) : x.toFixed(2);
+  return s.includes('.') ? s.replace(/0+$/, '').replace(/\.$/, '') : s;
+}
+
+export function fmtZl(v) {
+  const neg = v < 0;
+  const a = Math.abs(v);
+  let out;
+  const unit = ZL_UNITS.find(([d]) => a >= d * 0.9995);
+  if (unit) out = sig3(a / unit[0]).replace('.', ',') + ' ' + unit[1];
+  else if (a >= 100) out = String(Math.round(a));
+  else out = a.toFixed(2).replace(/\.00$/, '').replace('.', ',');
+  return (neg ? '-' : '') + out + ' zł';
 }
 
 export function fmtKg(kg) {

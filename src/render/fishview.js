@@ -1,12 +1,12 @@
 // Rybna Wyspa: instanced fish rendering (bend animation, trait tints/patterns/glow, metallic variants, accessories, hover outline, picking).
 
 import * as THREE from 'three';
-import { SPECIES } from '../data/species.js';
+import { SPECIES, RARITIES } from '../data/species.js';
 import { TRAITS } from '../data/traits.js';
 import { Instancer } from './instancer.js';
 import { Geo } from './geo.js';
 import { U } from './materials.js';
-import { fishLength, fatOf } from '../sim/value.js';
+import { bodyLength, fatOf } from '../sim/value.js';
 
 const COMMON_V = /* glsl */`
 attribute float aBend;
@@ -14,12 +14,13 @@ attribute float aGlow;
 attribute vec4 iTint;
 attribute vec4 iEmi;
 attribute vec4 iMisc;
-attribute vec2 iMove;
+attribute vec4 iMove;
 uniform float uTime;
 varying vec4 vTint;
 varying vec4 vEmi;
 varying vec4 vMisc;
 varying float vGlow;
+varying float vRar;
 varying vec3 vObj;`;
 
 const BEND = /* glsl */`
@@ -30,10 +31,12 @@ float freq = mix(10.0, 7.0, iMove.x);
 transformed.z += sin(aBend * 3.4 - uTime * freq + iMisc.w * 6.2831) * amp * aBend * aBend;
 if (abs(iMisc.x - 3.0) < 0.5) transformed = floor(transformed * 13.0 + 0.5) / 13.0;
 vObj = transformed;
-vTint = iTint; vEmi = iEmi; vMisc = iMisc; vGlow = aGlow;`;
+vTint = iTint; vEmi = iEmi; vMisc = iMisc; vGlow = aGlow; vRar = iMove.z;`;
 
 const COMMON_F = /* glsl */`
 uniform float uTime;
+uniform vec3 uRar[7];
+varying float vRar;
 varying vec4 vTint;
 varying vec4 vEmi;
 varying vec4 vMisc;
@@ -68,12 +71,15 @@ float vRough = 0.72;
 if (vari == 1) { base = mix(base, vec3(0.86, 0.9, 0.95), 0.72); vMetal = 0.88; vRough = 0.24; }
 else if (vari == 2) { base = mix(base, vec3(1.0, 0.74, 0.22), 0.82); vMetal = 1.0; vRough = 0.28; }
 else if (vari == 3) { vec3 rb = hsv(fract(vObj.x * 1.4 + vObj.y + uTime * 0.22), 0.75, 1.0); base = mix(base, rb, 0.82); vMetal = 0.55; vRough = 0.3; extraEmi += rb * 0.18; }
+else if (vRar > 1.5) { vMetal = 0.3; vRough = 0.42; }
 diffuseColor.rgb = base;`;
 
 export function fishMaterial() {
   const m = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.72, metalness: 0, envMapIntensity: 1 });
+  const rar = { value: RARITIES.map((r) => new THREE.Color(r.color)) };
   m.onBeforeCompile = (s) => {
     s.uniforms.uTime = U.time;
+    s.uniforms.uRar = rar;
     s.vertexShader = s.vertexShader
       .replace('#include <common>', '#include <common>\n' + COMMON_V)
       .replace('#include <begin_vertex>', BEND);
@@ -82,9 +88,9 @@ export function fishMaterial() {
       .replace('#include <color_fragment>', '#include <color_fragment>\n' + PATTERNS)
       .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor = vMetal;')
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = vRough;')
-      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += vEmi.rgb * vEmi.a * (0.78 + 0.22 * sin(uTime * 3.0 + vMisc.w * 30.0)) + diffuseColor.rgb * vGlow * 1.4 + extraEmi;');
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += vEmi.rgb * vEmi.a * (0.78 + 0.22 * sin(uTime * 3.0 + vMisc.w * 30.0)) + diffuseColor.rgb * vGlow * 1.4 + extraEmi;\nint rI = int(vRar + 0.5);\nfloat rimK = pow(1.0 - abs(dot(normal, normalize(vViewPosition))), 2.4);\nif (rI >= 2) totalEmissiveRadiance += uRar[rI] * rimK * (0.22 + 0.1 * float(rI - 2)) * (0.85 + 0.15 * sin(uTime * 2.2 + vMisc.w * 20.0));');
   };
-  m.customProgramCacheKey = () => 'fish-v1';
+  m.customProgramCacheKey = () => 'fish-v2';
   return m;
 }
 
@@ -93,6 +99,7 @@ uniform float uTime;
 uniform vec4 uMisc;
 uniform float uSwim;
 uniform float uPush;
+uniform vec2 uRes;
 attribute float aBend;
 void main() {
   vec3 p = position;
@@ -100,8 +107,12 @@ void main() {
   float amp = max(exp(-age * 2.4) * 0.24, uSwim * 0.11) + 0.012;
   float freq = mix(10.0, 7.0, uSwim);
   p.z += sin(aBend * 3.4 - uTime * freq + uMisc.w * 6.2831) * amp * aBend * aBend;
-  p += normal * uPush;
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+  vec4 clip = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+  vec3 nv = normalize(normalMatrix * normal);
+  vec2 nc = (projectionMatrix * vec4(nv, 0.0)).xy;
+  float nl = length(nc);
+  if (nl > 1e-5) clip.xy += nc / nl * uPush * 2.0 / uRes * clip.w;
+  gl_Position = clip;
 }`;
 
 const ACC = {};
@@ -164,9 +175,9 @@ export class FishView {
     };
     this.outline = null;
     this.outlineMat = new THREE.ShaderMaterial({
-      uniforms: { uTime: U.time, uMisc: { value: new THREE.Vector4() }, uSwim: { value: 0 }, uPush: { value: 0.02 } },
+      uniforms: { uTime: U.time, uMisc: { value: new THREE.Vector4() }, uSwim: { value: 0 }, uPush: { value: 3 }, uRes: { value: new THREE.Vector2(innerWidth, innerHeight) } },
       vertexShader: OUT_V,
-      fragmentShader: 'void main(){ gl_FragColor = vec4(1.0); }',
+      fragmentShader: 'void main(){ gl_FragColor = vec4(0.97, 0.95, 0.88, 1.0); }',
       side: THREE.BackSide,
     });
     this.outlineGeos = new Map();
@@ -176,7 +187,7 @@ export class FishView {
   instancer(sp) {
     if (this.inst.has(sp)) return this.inst.get(sp);
     const geo = this.models.fishGeometry(SPECIES[sp].id);
-    const ins = new Instancer(this.scene, geo, this.mat, { cap: 32, cull: false, attrs: { iTint: 4, iEmi: 4, iMisc: 4, iMove: 2 } });
+    const ins = new Instancer(this.scene, geo, this.mat, { cap: 32, cull: false, attrs: { iTint: 4, iEmi: 4, iMisc: 4, iMove: 4 } });
     this.inst.set(sp, ins);
     return ins;
   }
@@ -196,7 +207,7 @@ export class FishView {
       this.instancer(meta.sp).add(id, null);
     }
     r.meta = meta;
-    r.L = fishLength(meta);
+    r.L = bodyLength(meta);
     r.fat = fatOf(meta);
     r.dims = this.models.fishDims(SPECIES[meta.sp].id);
     const vis = visualOf(meta);
@@ -205,7 +216,8 @@ export class FishView {
     ins.attr(id, 'iTint', vis.tint);
     ins.attr(id, 'iEmi', vis.emi);
     ins.attr(id, 'iMisc', [vis.pat, meta.v || 0, r.flopAt, r.seed]);
-    ins.attr(id, 'iMove', [r.swim, r.L]);
+    r.rar = SPECIES[meta.sp].rarity;
+    ins.attr(id, 'iMove', [r.swim, r.L, r.rar, 0]);
     for (const k of r.acc) this.accInst(k).remove(id);
     r.acc = vis.acc;
     for (const k of r.acc) this.accInst(k).add(id, null);
@@ -233,7 +245,7 @@ export class FishView {
     const r = this.recs.get(id);
     if (!r || r.swim === on) return;
     r.swim = on;
-    this.instancer(r.sp).attr(id, 'iMove', [on, r.L]);
+    this.instancer(r.sp).attr(id, 'iMove', [on, r.L, r.rar || 0, 0]);
   }
 
   pose(id, p, q) {
@@ -245,7 +257,8 @@ export class FishView {
   }
 
   place(r) {
-    sc.set(r.L, r.L * r.fat, r.L * r.fat);
+    const hk = r.held ? 0.6 : 1;
+    sc.set(r.L * hk, r.L * r.fat * hk, r.L * r.fat * hk);
     m4.compose(r.p, r.q, sc);
     this.instancer(r.sp).set(r.id, m4);
     for (const k of r.acc) {
@@ -260,7 +273,7 @@ export class FishView {
       }
       this.accInst(k).set(r.id, m4);
     }
-    if (this.hover === r.id && this.outline) this.outline.matrix.compose(r.p, r.q, sc.set(r.L, r.L * r.fat, r.L * r.fat));
+    if (this.hover === r.id && this.outline) this.outline.matrix.compose(r.p, r.q, sc.set(r.L * hk, r.L * r.fat * hk, r.L * r.fat * hk));
   }
 
   setHover(id) {
@@ -283,7 +296,7 @@ export class FishView {
     mesh.frustumCulled = false;
     this.outline = mesh;
     this.scene.add(mesh);
-    this.outlineMat.uniforms.uPush.value = 0.016 / Math.max(0.15, r.L) + 0.004;
+    this.outlineMat.uniforms.uRes.value.set(innerWidth, innerHeight);
     this.place(r);
   }
 

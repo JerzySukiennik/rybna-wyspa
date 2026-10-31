@@ -24,7 +24,16 @@ export function eelFin(ctx, o) {
     const tip = madd(pt.p, nr, pt.h);
     rows[0].push(base); rows[1].push(vlerp(base, tip, 0.5)); rows[2].push(tip);
   }
-  finStrip(S, rows, [0.0042, 0.0016, 0], [0, 0, 1], (r, j) => ctx.finCol(path[j].g === 2 ? 'A' : 'D', j / n, r === 0 ? 0.25 : 0.8, j, r), 0, 1);
+  const th = o.th ?? 0.0045;
+  finStrip(S, rows, [th, th * 0.42, 0], [0, 0, 1], (r, j) => ctx.finCol(path[j].g === 2 ? 'A' : 'D', j / n, r === 0 ? 0.3 : 0.9, j, r), 0, 1);
+}
+
+export function kype(ctx, o = {}) {
+  const { prof, S } = ctx;
+  const p0 = ctx.surfRad(o.u0 ?? 0.085, Math.PI);
+  const c0 = prof(0).c;
+  const pts = [madd(p0.p, p0.n, -0.008), [0.5 - 0.03, c0 - 0.046, 0], [0.5 + 0.008, c0 - 0.034, 0], [0.5 + 0.02, c0 - 0.004, 0], [0.5 + 0.014, c0 + 0.022, 0]];
+  tube(S, pts, [o.r ?? 0.022, 0.019, 0.014, 0.009, 0.003], 6, (i) => C(o.col ?? '#8e979e').multiplyScalar(1 - i * 0.06), 0, 4, { capEnd: true });
 }
 
 export function teeth(ctx, list, col = '#f2efe4') {
@@ -300,36 +309,37 @@ export function monster(ctx) {
   const skin = C('#1e2c1b'), skin2 = C('#121a10'), inner = C('#4a1214');
   const hinge = 0.2, prH = prof(hinge);
   const hp = [prH.x, prH.c - prH.hb * 0.45, 0];
-  const open = 0.33, len = 0.215, n = 5;
+  const open = 0.3, len = 0.215, n = 6;
   const rings = [];
   for (let s = 0; s <= n; s++) {
     const f = s / n;
-    const c = [hp[0] + Math.cos(open) * len * f, hp[1] - Math.sin(open) * len * f, 0];
-    const hw = lerp(prH.w * 0.92, prH.w * 0.32, Math.pow(f, 1.2));
-    const dp = lerp(0.095, 0.05, f);
-    const ring = [[c[0], c[1], hw], [c[0], c[1] - dp * 0.55, hw * 0.92], [c[0], c[1] - dp, hw * 0.42], [c[0], c[1] - dp, -hw * 0.42], [c[0], c[1] - dp * 0.55, -hw * 0.92], [c[0], c[1], -hw]];
-    rings.push({ c, ring });
+    const c = [hp[0] + Math.cos(open) * len * f, hp[1] - Math.sin(open) * len * f + 0.035 * f * f, 0];
+    const hw = lerp(prH.w * 0.92, prH.w * 0.34, Math.pow(f, 1.25));
+    const dp = lerp(0.085, 0.045, f) + 0.018 * smooth(0.55, 0.85, f) * (1 - smooth(0.9, 1, f));
+    const prof8 = [[1, 0], [1.02, -0.32], [0.84, -0.74], [0.4, -1], [-0.4, -1], [-0.84, -0.74], [-1.02, -0.32], [-1, 0]];
+    rings.push({ c, ring: prof8.map(([z, y]) => [c[0], c[1] + y * dp, z * hw]) });
   }
   for (let s = 0; s < n; s++) {
     const A = rings[s], B = rings[s + 1];
-    for (let k = 0; k < 6; k++) {
-      const k1 = (k + 1) % 6;
+    for (let k = 0; k < 8; k++) {
+      const k1 = (k + 1) % 8;
       const a = A.ring[k], b = A.ring[k1], c = B.ring[k1], d = B.ring[k];
       const m = vlerp(a, c, 0.5);
       const ctr = vlerp(A.c, B.c, 0.5);
-      const isTop = k === 5;
-      const want = isTop ? [0, 1, 0] : sub(m, add(ctr, [0, -0.01, 0]));
-      S.quad(a, b, c, d, isTop ? inner : (k === 2 ? skin2 : skin), 0, want, 0);
+      const isTop = k === 7;
+      const want = isTop ? [0, 1, 0] : sub(m, add(ctr, [0, 0.012, 0]));
+      const col = isTop ? inner : mixC(skin, skin2, (k === 3 ? 1 : k === 2 || k === 4 ? 0.6 : 0.15)).multiplyScalar(0.96 + 0.08 * hh(s, k, 4));
+      S.quad(a, b, c, d, col, 0, want, 0);
     }
   }
-  const tipR = rings[n].ring, tipC = add(rings[n].c, [0.012, -0.012, 0]);
-  for (let k = 0; k < 6; k++) S.tri(tipR[k], tipR[(k + 1) % 6], tipC, skin, 0, [1, -0.3, 0], 0);
+  const tipR = rings[n].ring, tipC = add(rings[n].c, [0.014, -0.02, 0]);
+  for (let k = 0; k < 8; k++) S.tri(tipR[k], tipR[(k + 1) % 8], tipC, k === 7 ? inner : skin, 0, [1, -0.2, 0], 0);
   const tooth = C('#e9e3c6');
   for (let s = 1; s < n; s++) {
     const R = rings[s].ring;
-    for (const side of [0, 5]) {
+    for (const side of [0, 7]) {
       const p0 = R[side];
-      tube(S, [add(p0, [0, -0.004, 0]), add(p0, [0.004, 0.032 - s * 0.003, side === 0 ? -0.004 : 0.004])], [0.0075, 0], 3, tooth, 0, 4);
+      tube(S, [add(p0, [0, -0.004, side === 0 ? -0.004 : 0.004]), add(p0, [0.004, 0.034 - s * 0.003, side === 0 ? -0.006 : 0.006])], [0.0078, 0], 3, tooth, 0, 4);
     }
   }
   teeth(ctx, [0.03, 0.06, 0.09, 0.12, 0.155].map((u, i) => ({ u, yn: -0.62, dir: [0.1, -1, -0.15], len: 0.038 - i * 0.003, r: 0.0085, out: 0.1 })), '#e9e3c6');
@@ -338,12 +348,12 @@ export function monster(ctx) {
       let at;
       if (from === 'jaw') {
         const R = rings[Math.round(u)].ring;
-        const p = side > 0 ? R[1] : R[4];
+        const p = side > 0 ? R[2] : R[5];
         at = { p: add(p, [0, 0.004, -side * 0.008]), n: [0, -0.5, side * 0.8] };
       } else { at = ctx.surfAt(u, yn, side); at = { p: madd(at.p, at.n, -0.005), n: at.n }; }
       let d = norm([dir[0], dir[1], dir[2] * side]);
       const pts = [at.p];
-      const segs = 5;
+      const segs = 4;
       for (let i = 0; i < segs; i++) {
         pts.push(madd(pts[pts.length - 1], d, ln / segs));
         d = norm(add(d, mul([droop[0], droop[1], droop[2] * side], 1 / segs + i * 0.05)));
@@ -355,7 +365,7 @@ export function monster(ctx) {
   tent(5, 0, [0.1, -1, 0.15], [-0.9, 0.5, -0.5], 0.17, 'jaw');
   tent(0.17, -0.25, [-0.3, -0.6, 0.8], [-1.0, -0.2, -0.4], 0.16);
   const plateC = C('#5a6646'), plateE = C('#26301f');
-  const rows = [[0.25, 0.7, 0.1, 6]];
+  const rows = [[0.27, 0.68, 0.1, 5]];
   for (const [u0, u1, yn, cnt] of rows) {
     for (const side of [1, -1]) {
       for (let i = 0; i < cnt; i++) {

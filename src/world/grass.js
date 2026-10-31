@@ -3,12 +3,13 @@
 import * as THREE from 'three';
 import { coastDist, beachiness, islandHeight, pathDist, LAND, SPAN } from './island.js';
 import { rng } from '../util.js';
+import { U } from '../render/materials.js';
 
 const TILE = 44;
 const MASK = 512;
 
 export class Grass {
-  constructor(scene, heightTex, count = 52000) {
+  constructor(scene, heightTex, count = 60000) {
     this.cut = document.createElement('canvas');
     this.cut.width = this.cut.height = MASK;
     this.ctx = this.cut.getContext('2d');
@@ -43,11 +44,11 @@ export class Grass {
       const hx = islandHeight(wx + 0.6, wz), hz = islandHeight(wx, wz + 0.6);
       const slope = Math.hypot(hx - h, hz - h) / 0.6;
       let g = 1;
-      if (s < 8) g = 0;
-      if (b > 0.5 && s < 15) g = 0;
-      if (slope > 0.45) g = 0;
-      if (h < LAND - 0.2) g = 0;
-      if (s > 3.5 && pathDist(wx, wz) < 0.9) g = 0;
+      if (s < 2.0) g = 0;
+      if (b > 0.5 && s < 7.5) g = 0;
+      if (slope > 0.5) g = 0;
+      if (h < 0.55) g = 0;
+      if (s > 3.5 && pathDist(wx, wz) < 0.75) g = 0;
       const o = (j * MASK + i) * 4;
       img.data[o] = g * 255; img.data[o + 1] = 0; img.data[o + 2] = 0; img.data[o + 3] = 255;
     }
@@ -81,6 +82,7 @@ export class Grass {
     const u = this.u;
     mat.onBeforeCompile = (sh) => {
       Object.assign(sh.uniforms, u);
+      sh.uniforms.uWet = U.wet;
       sh.vertexShader = sh.vertexShader
         .replace('#include <common>', `#include <common>
           uniform float uTime; uniform vec3 uPlayer; uniform float uTile; uniform float uSpan; uniform float uWind;
@@ -122,14 +124,14 @@ export class Grass {
           vTint = aTint;`);
       sh.fragmentShader = sh.fragmentShader
         .replace('#include <common>', `#include <common>
-          uniform float uFrost;
+          uniform float uFrost; uniform float uWet;
           varying float vH; varying float vTint;`)
         .replace('#include <normal_fragment_begin>', `#include <normal_fragment_begin>
           normal = normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz);`)
         .replace('#include <color_fragment>', `#include <color_fragment>
-          vec3 gBase = vec3(0.15, 0.31, 0.04);
-          vec3 gTip = mix(vec3(0.27, 0.47, 0.06), vec3(0.34, 0.52, 0.08), vTint);
-          diffuseColor.rgb = mix(gBase, gTip, smoothstep(0.0, 1.0, vH)) * (0.94 + 0.12 * vTint);
+          vec3 gBase = vec3(0.15, 0.23, 0.06);
+          vec3 gTip = mix(vec3(0.26, 0.35, 0.09), vec3(0.35, 0.41, 0.13), vTint);
+          diffuseColor.rgb = mix(gBase, gTip, smoothstep(0.0, 1.0, vH)) * (0.92 + 0.14 * vTint) * (1.0 - 0.16 * uWet);
           diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.86, 0.93, 0.96), uFrost * smoothstep(0.4, 1.0, vH));`);
     };
     mat.customProgramCacheKey = () => 'grass-rw';
@@ -137,7 +139,7 @@ export class Grass {
   }
 
   makeMesh(count) {
-    const verts = new Float32Array([-0.024, 0, 0, 0.024, 0, 0, -0.015, 0.45, 0, 0.015, 0.45, 0, 0, 1, 0]);
+    const verts = new Float32Array([-0.03, 0, 0, 0.03, 0, 0, -0.018, 0.45, 0, 0.018, 0.45, 0, 0, 1, 0]);
     const idx = [0, 1, 2, 1, 3, 2, 2, 3, 4];
     const geo = new THREE.InstancedBufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
