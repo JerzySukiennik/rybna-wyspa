@@ -154,9 +154,9 @@ export class Hands {
     vh.visible = show && stack.length > 0;
     this.wob += dt * (2 + g.player.speedNow * 1.4);
     const sway = Math.sin(this.wob) * 0.012 * Math.min(1, g.player.speedNow / 4);
-    vh.position.set(sway, Math.abs(Math.cos(this.wob)) * 0.01 * Math.min(1, g.player.speedNow / 4), 0);
+    vh.position.set(sway, 0.075 + Math.abs(Math.cos(this.wob)) * 0.01 * Math.min(1, g.player.speedNow / 4), 0.02);
     const cam = g.camera;
-    let y = -0.3;
+    let y = -0.235;
     let i = 0;
     for (const f of stack) {
       const r = g.fishView.recs.get(f.id);
@@ -165,7 +165,7 @@ export class Hands {
       r.visible = true;
       const th = Math.max(0.03, r.L * r.dims.w * r.fat);
       const lean = Math.sin(this.wob * 0.5 + i * 0.7) * 0.02 * Math.min(1, i / 4);
-      tmp.set(sway + lean * i * 0.3, y + th / 2, -0.52 - Math.min(0.25, r.L * 0.15));
+      tmp.set(sway + lean * i * 0.3, y + th / 2, -0.43 - Math.min(0.14, r.L * 0.08));
       tmp.applyMatrix4(cam.matrixWorld);
       q.setFromEuler(new THREE.Euler(Math.PI / 2, 0, (i % 2 ? 0.12 : -0.1) + lean, 'XYZ'));
       q.premultiply(cam.quaternion);

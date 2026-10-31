@@ -67,8 +67,7 @@ function buildTorso(vest) {
   pk(-0.085, 0.32, 0.05, 0.045); pk(0.085, 0.32, 0.05, 0.045);
   pk(-0.09, 0.15, 0.06, 0.055); pk(0.09, 0.15, 0.06, 0.055);
   ridge(S, [[0, 0.1, -0.112], [0, 0.3, -0.122], [0, 0.46, -0.118]], [[0, 0, -1], [0, 0, -1], [0, 0, -1]], 0.006, 0.006, shade(vest, 0.55), 0, 0);
-  const neck = tube(S, [[0, 0.52, 0], [0, 0.6, 0]], [0.05, 0.048], 8, SKIN, 0, 0);
-  void neck;
+  tube(S, [[0, 0.52, 0], [0, 0.6, 0]], [0.05, 0.048], 8, SKIN, 0, 0);
   loft(S, [[0.53, 0.075, 0.07], [0.565, 0.068, 0.064]], 10, () => SHIRT_D);
   return S;
 }
@@ -148,8 +147,8 @@ export function buildViewHands() {
       const fx = px - 0.033 + i * 0.022, len = i === 0 || i === 3 ? 0.05 : 0.06;
       tube(S, [[fx, py, pz - 0.08], [fx, py + 0.012, pz - 0.08 - len * 0.6], [fx, py + 0.034, pz - 0.08 - len]], [0.0105, 0.0098, 0.008], 6, (k, j) => (j < 3 ? SKIN : palm), 0, 0, { capEnd: true });
     }
-    const tx = px - sx * 0.05;
-    tube(S, [[px - sx * 0.035, py, pz - 0.02], [tx, py + 0.016, pz - 0.05], [tx - sx * 0.004, py + 0.03, pz - 0.085]], [0.012, 0.011, 0.009], 6, SKIN, 0, 0, { capEnd: true });
+    const tx = px + sx * 0.052;
+    tube(S, [[px + sx * 0.036, py, pz - 0.02], [tx, py + 0.016, pz - 0.05], [tx + sx * 0.004, py + 0.03, pz - 0.085]], [0.012, 0.011, 0.009], 6, SKIN, 0, 0, { capEnd: true });
     const m = new THREE.Mesh(S.geometry(), MAT);
     m.name = sx < 0 ? 'handL' : 'handR';
     root.add(m);

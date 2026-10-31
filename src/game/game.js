@@ -14,7 +14,7 @@ import { Sky } from '../world/sky.js';
 import { WeatherFx } from '../world/weatherfx.js';
 import { Grass } from '../world/grass.js';
 import { buildDecor } from '../world/decor.js';
-import { buildStructures, sellHole } from '../world/structures.js';
+import { buildStructures, sellHole, redrawSigns } from '../world/structures.js';
 import { BlockWorld } from '../world/blockworld.js';
 import { blockMaterial, U, waterLight } from '../render/materials.js';
 import { FishView } from '../render/fishview.js';
@@ -107,7 +107,8 @@ export class Game {
     this.wfx = new WeatherFx(this.scene);
     this.wfx.onThunder = () => this.audio.play('thunder', { vol: 0.9 });
     this.blockMat = blockMaterial();
-    this.structs = buildStructures(this.scene, this.phys, this.blockMat);
+    this.structs = buildStructures(this.scene, this.phys, this.blockMat, this.models);
+    if (document.fonts) document.fonts.load('700 64px Oswald').then(() => redrawSigns()).catch(() => {});
     const decoMat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
     progress(0.46, 'Drzewa i trzciny…');
     this.decor = buildDecor(this.scene, this.phys, this.models, decoMat);
@@ -755,7 +756,7 @@ export class Game {
   }
 
   grassShapes() {
-    const out = [{ x: SPOTS.sell.x, z: SPOTS.sell.z, r: 6.3 }, { x: SPOTS.shop.x, z: SPOTS.shop.z, w: 5.4, l: 3.4, yaw: 0 }];
+    const out = [{ x: SPOTS.sell.x, z: SPOTS.sell.z, r: 6.3 }, { x: SPOTS.shop.x, z: SPOTS.shop.z, w: 5.4, l: 4.1, yaw: -Math.PI / 2 }];
     for (const b of this.blocks.blocks.values()) {
       if (b.def.ghost) continue;
       out.push({ x: b.pos.x, z: b.pos.z, w: b.def.dim[0], l: b.def.dim[2], yaw: b.rec.ry || 0 });

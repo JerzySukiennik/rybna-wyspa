@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Rybna Wyspa modele</title>
+<link rel="icon" href="data:,">
 <!-- Rybna Wyspa: model viewer and contact sheets for fish, avatar and decorations. -->
 <style>
   :root { --ink: #23303a; --sub: #5c6b76; --bg1: #cfe6f6; --bg2: #eef3f2; }
@@ -158,6 +159,7 @@ function renderViews() {
   renderer.setClearColor('#eef3f2');
   renderer.clear();
   for (const v of views) {
+    if (v.custom) continue;
     const { stage, obj, rect, cam } = v;
     stage.scene.children.forEach((c) => { if (c.userData.model) c.visible = c === obj; });
     if (v.persp) fitPersp(cam, obj, v.dir, v.pad); else frame(cam, obj, v.dir, v.up, v.pad, rect.w / rect.h);

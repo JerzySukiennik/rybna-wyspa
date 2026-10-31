@@ -40,7 +40,7 @@ export function teeth(ctx, list, col = '#f2efe4') {
 }
 
 export function scutes(ctx, o) {
-  const col = C(o.col), dark = C(o.dark || o.col);
+  const col = C(o.col);
   const put = (at, r, st) => dome(ctx.S, ctx.caster, at.p, at.n, r, { seg: 4, rings: [[1, -0.15]], apex: o.apex ?? 0.7, stretch: st, cols: [col], kind: 5 });
   const D = o.dorsal;
   for (let i = 0; i < D.n; i++) put(ctx.surfRad(lerp(D.u0, D.u1, i / (D.n - 1)), 0), D.r * lerp(1.1, 0.75, i / D.n), 1.35);
@@ -52,7 +52,6 @@ export function scutes(ctx, o) {
       }
     }
   }
-  void dark;
 }
 
 export const rocketProf = (t) => {

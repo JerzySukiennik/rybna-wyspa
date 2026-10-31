@@ -127,6 +127,7 @@ async function buildCredits() {
 
 async function start(mode, code) {
   for (const b of document.querySelectorAll('#menu button')) b.disabled = true;
+  if (mode !== 'solo' && game.netAvailable === undefined) { $('net-status').textContent = 'Łączenie z serwerem…'; await game.probeNet(); }
   try {
     if (mode === 'solo' || !game.netAvailable) await game.startSolo();
     else await game.startOnline(mode, code);
