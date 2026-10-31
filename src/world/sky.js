@@ -22,6 +22,7 @@ uniform vec3 uMoonDir;
 uniform vec3 uMoonCol;
 uniform float uNight;
 uniform float uMoon;
+uniform float uDayMoon;
 uniform float uTime;
 uniform float uAurora;
 uniform float uCover;
@@ -62,7 +63,8 @@ void main() {
     vec3 cc = uCloud * (0.82 + 0.3 * vn(cp * 3.0));
     col = mix(col, cc, k * 0.94);
   }
-  col = mix(col, uMoonCol * crater * 1.35, disc * uNight * (1.0 - uCover * 0.85));
+  col = mix(col, uMoonCol * crater * mix(1.0, 1.35, uNight), disc * max(uNight, uDayMoon * 0.6) * (1.0 - uCover * 0.85));
+  col += uMoonCol * pow(max(m, 0.0), 300.0) * 0.12 * uDayMoon;
   gl_FragColor = vec4(col, 1.0);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
@@ -86,7 +88,7 @@ export class Sky {
     this.u = {
       uTop: { value: DAY.top.clone() }, uHorizon: { value: DAY.hor.clone() },
       uSunDir: { value: new THREE.Vector3(0, 1, 0) }, uSunCol: { value: DAY.sun.clone() }, uSunVis: { value: 1 },
-      uMoonDir: { value: new THREE.Vector3(0, -1, 0) }, uMoonCol: { value: C('#eef1ff') }, uMoon: { value: 1 },
+      uMoonDir: { value: new THREE.Vector3(0, -1, 0) }, uMoonCol: { value: C('#eef1ff') }, uMoon: { value: 1 }, uDayMoon: { value: 0 },
       uNight: { value: 0 }, uTime: { value: 0 }, uAurora: { value: 0 }, uCover: { value: 0 }, uCloud: { value: C('#9aa2aa') },
     };
     const dome = new THREE.Mesh(new THREE.SphereGeometry(4000, 32, 16), new THREE.ShaderMaterial({ uniforms: this.u, vertexShader: SKY_V, fragmentShader: SKY_F, side: THREE.BackSide, depthWrite: false }));
@@ -197,7 +199,8 @@ export class Sky {
     u.uMoon.value = 0.55 + w.moon * 0.45;
     u.uMoonCol.value.set(w.blood > 0.3 ? '#ff7a6b' : '#eef1ff');
     u.uTime.value = t;
-    u.uAurora.value = w.aurora * (1 - dayK);
+    u.uAurora.value = w.aurora * (0.4 + 0.6 * (1 - dayK));
+    u.uDayMoon.value = Math.max(w.moon, w.blood) * dayK;
     u.uCover.value = clamp(grey * 1.05 - 0.05, 0, 1);
     u.uCloud.value.set('#9aa2aa').multiplyScalar(lerp(0.22, 1, dayK) * (1 - w.dark * 0.5)).lerp(tmpB.copy(u.uHorizon.value), 0.25);
 

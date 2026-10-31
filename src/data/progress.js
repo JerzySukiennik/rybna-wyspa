@@ -35,12 +35,15 @@ export const REBIRTH_LEVEL = 10;
 export const REBIRTH_MULT = 1.5;
 export const START_CASH = 150;
 
+const ryb = (n) => (n === 1 ? 'rybę' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'ryby' : 'ryb');
+const rar = (r, n) => (n === 1 ? r.replace(/a$/, 'ą') : r.replace(/a$/, n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'e' : 'ych'));
+
 export const QUEST_KINDS = [
-  { id: 'sell_n', text: (q) => `Sprzedaj ${q.n} ryb` },
+  { id: 'sell_n', text: (q) => `Sprzedaj ${q.n} ${ryb(q.n)}` },
   { id: 'sell_sp', text: (q, sp) => `Sprzedaj ${q.n} × ${sp}` },
-  { id: 'sell_rar', text: (q, sp, rar) => `Sprzedaj ${q.n} ryb rzadkości ${rar} lub wyższej` },
-  { id: 'sell_trait', text: (q) => `Sprzedaj ${q.n} ryb z dowolnym traitem` },
-  { id: 'sell_var', text: (q) => `Sprzedaj ${q.n} ryb Srebrnych, Złotych albo Tęczowych` },
+  { id: 'sell_rar', text: (q, sp, r) => `Sprzedaj ${q.n} ${ryb(q.n)} rzadkości ${r.replace(/a$/, 'ej')} lub wyższej` },
+  { id: 'sell_trait', text: (q) => `Sprzedaj ${q.n} ${ryb(q.n)} z dowolnym traitem` },
+  { id: 'sell_var', text: (q) => `Sprzedaj ${q.n} ${ryb(q.n)} ${rar('srebrna', q.n)}, ${rar('złota', q.n)} albo ${rar('tęczowa', q.n)}` },
   { id: 'earn', text: (q, sp, rar, fmt) => `Zarób ${fmt(q.n)}` },
   { id: 'big', text: (q, sp, rar, fmt) => `Sprzedaj jedną rybę za ${fmt(q.n)} lub więcej` },
 ];

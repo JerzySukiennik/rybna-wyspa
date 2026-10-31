@@ -42,7 +42,8 @@ export class Farm {
   }
 
   night() {
-    return isNight(dayPhase(this.clock() / 1000, this.store.state.seed));
+    const w = this.weather();
+    return isNight(dayPhase(this.clock() / 1000, this.store.state.seed)) || w === 'pelnia' || w === 'krwawy';
   }
 
   heldCount() {

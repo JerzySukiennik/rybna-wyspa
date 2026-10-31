@@ -5,7 +5,7 @@ import { coastDist, beachiness, islandHeight, pathDist, LAND, SPAN } from './isl
 import { rng } from '../util.js';
 import { U } from '../render/materials.js';
 
-const TILE = 44;
+const TILE = 34;
 const MASK = 512;
 
 export class Grass {
@@ -88,24 +88,30 @@ export class Grass {
           uniform float uTime; uniform vec3 uPlayer; uniform float uTile; uniform float uSpan; uniform float uWind;
           uniform sampler2D uHeight; uniform sampler2D uCut;
           attribute vec4 aOff; attribute float aTint;
-          varying float vH; varying float vTint;`)
+          varying float vH; varying float vTint; varying float vClump; varying float vFlower;
+          float gh(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+          float gn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(gh(i), gh(i + vec2(1.0, 0.0)), f.x), mix(gh(i + vec2(0.0, 1.0)), gh(i + vec2(1.0, 1.0)), f.x), f.y); }`)
         .replace('#include <beginnormal_vertex>', `vec3 objectNormal = vec3(0.0, 1.0, 0.0);
           #ifdef USE_TANGENT
             vec3 objectTangent = vec3(1.0, 0.0, 0.0);
           #endif`)
         .replace('#include <begin_vertex>', `
           vec3 transformed = position;
+          float fl0 = step(0.972, fract(aTint * 91.7));
+          if (fl0 > 0.5 && position.y > 0.4 && position.y < 0.5) { transformed.y = 0.84; transformed.x *= 3.2; }
           vec2 wp = aOff.xy + uTile * floor((cameraPosition.xz - aOff.xy) / uTile + 0.5);
           vec2 tuv = wp / uSpan + 0.5;
           float ground = texture2D(uHeight, tuv).r;
           float mask = texture2D(uCut, vec2(tuv.x, tuv.y)).r;
           float camD = distance(wp, cameraPosition.xz);
-          float keep = clamp(1.25 - camD / 16.0, 0.18, 1.0);
+          float keep = clamp(1.3 - camD / 13.0, 0.22, 1.0);
           float hsh = fract(sin(dot(aOff.xy, vec2(12.9898, 78.233))) * 43758.5453);
           float alive = step(hsh, keep) * step(0.5, mask);
           float fade = 1.0 - smoothstep(uTile * 0.5 - 8.0, uTile * 0.5 - 1.0, camD);
           alive *= step(0.02, fade);
-          float bh = aOff.z;
+          vFlower = fl0;
+          float bh = aOff.z * (1.0 + vFlower * 0.45);
+          vClump = gn(wp * 0.13) * 0.65 + gn(wp * 0.41 + 9.0) * 0.35;
           transformed.x *= alive * (1.0 + (1.0 - keep) * 1.6);
           transformed.y *= bh * alive * fade;
           float ca = cos(aOff.w), sa = sin(aOff.w);
@@ -120,18 +126,21 @@ export class Grass {
           transformed.x += wp.x;
           transformed.z += wp.y;
           transformed.y += ground - 0.01;
-          vH = position.y;
+          vH = fl0 > 0.5 && position.y > 0.4 && position.y < 0.5 ? 0.84 : position.y;
           vTint = aTint;`);
       sh.fragmentShader = sh.fragmentShader
         .replace('#include <common>', `#include <common>
           uniform float uFrost; uniform float uWet;
-          varying float vH; varying float vTint;`)
+          varying float vH; varying float vTint; varying float vClump; varying float vFlower;`)
         .replace('#include <normal_fragment_begin>', `#include <normal_fragment_begin>
           normal = normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz);`)
         .replace('#include <color_fragment>', `#include <color_fragment>
           vec3 gBase = vec3(0.15, 0.23, 0.06);
           vec3 gTip = mix(vec3(0.26, 0.35, 0.09), vec3(0.35, 0.41, 0.13), vTint);
+          gTip = mix(gTip, vec3(0.42, 0.4, 0.15), smoothstep(0.55, 0.85, vClump) * 0.55);
+          gTip = mix(gTip, vec3(0.2, 0.31, 0.08), smoothstep(0.4, 0.15, vClump) * 0.5);
           diffuseColor.rgb = mix(gBase, gTip, smoothstep(0.0, 1.0, vH)) * (0.92 + 0.14 * vTint) * (1.0 - 0.16 * uWet);
+          if (vFlower > 0.5 && vH > 0.8) diffuseColor.rgb = fract(vTint * 13.0) > 0.45 ? vec3(0.86, 0.85, 0.8) : vec3(0.85, 0.66, 0.1);
           diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.86, 0.93, 0.96), uFrost * smoothstep(0.4, 1.0, vH));`);
     };
     mat.customProgramCacheKey = () => 'grass-rw';

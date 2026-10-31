@@ -174,7 +174,7 @@ export class WeatherFx {
     }
     for (const s of this.meteors) {
       if (s.t < 0) {
-        if (this.k.meteor > 0.3 && night && Math.random() < dt * 0.8) {
+        if (this.k.meteor > 0.3 && Math.random() < dt * 0.8) {
           s.t = 0;
           const a = Math.random() * Math.PI * 2;
           s.a.set(cam.x + Math.cos(a) * 300, 160 + Math.random() * 80, cam.z + Math.sin(a) * 300);
