@@ -1,0 +1,8 @@
+.DS_Store
+.claude/
+node_modules/
+.env
+Niepotrzebne/gauntlet/ref/
+Niepotrzebne/shots/
+Niepotrzebne/audio-cache/
+Niepotrzebne/models/shots/

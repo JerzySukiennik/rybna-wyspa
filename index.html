@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rybna Wyspa</title>
+<meta name="description" content="Wspólna farma ryb z Narwi na małej wyspie. Budujcie taśmy, rynny i maszyny, łowcie rzadkie ryby z traitami.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23f5eedd'/%3E%3Cpath d='M12 32c8-11 22-13 32-4l8-6v20l-8-6c-10 9-24 7-32-4z' fill='%231f2d4a'/%3E%3Ccircle cx='22' cy='30' r='2.6' fill='%23f5eedd'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Oswald:wght@500;600;700&family=Fraunces:opsz,wght@9..144,800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/",
+    "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.21.0/dist/rapier.mjs"
+  }
+}
+</script>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="loading"><div class="ld-card paper"><h1>Rybna Wyspa</h1><p id="ld-text">Wypisuję kartę wędkarską…</p><div class="ld-bar"><i id="ld-fill"></i></div></div></div>
+
+<div id="hud" class="hidden">
+  <div id="lic" class="paper">
+    <div class="h">Karta wędkarska</div>
+    <div class="row"><span>Wyspa</span><b id="farm-name">…</b></div>
+    <div class="row"><span>Poziom</span><b id="lvl-n">1</b></div>
+    <div class="row"><span>Na wyspie</span><b><i id="online-dot"></i><span id="online-n">…</span></b></div>
+    <div class="prog"><i id="lvl-fill"></i></div>
+    <div class="row"><span id="lvl-to">do poziomu 2</span><b id="lvl-next"></b></div>
+    <div class="stamp">RYBNA<br>WYSPA<br>2026</div>
+  </div>
+  <div id="weather" class="paper"><div class="t"><span id="w-icon"></span><span id="w-name">Pogodnie</span><span id="w-left"></span></div><div class="s" id="w-trait"></div></div>
+  <div id="ticket" class="paper"><div class="h">STAN KASY</div><div id="cash-n">0 zł</div><div id="rate">+0 zł / min</div></div>
+  <div id="toasts"></div>
+  <div id="crosshair"></div>
+  <div id="prompt"></div>
+  <div id="fish-label" class="paper hidden"></div>
+  <div id="banner"></div>
+  <div id="full" class="paper hidden">Pełno ryb na wyspie. Spawnery czekają, aż coś sprzedacie.</div>
+  <div id="bottom">
+    <div id="build-hint"></div>
+    <div id="stack" class="paper"><span id="stack-n">STOS 0/3</span><span id="stack-icons"></span><span id="stack-v"></span></div>
+    <div id="hotbar"></div>
+  </div>
+  <div id="fps"></div>
+</div>
+
+<div id="panel" class="hidden">
+  <div class="sheet paper">
+    <div class="sheet-head"><h2>Rejestr farmy</h2><span class="muted">Tab albo Esc zamyka</span></div>
+    <nav class="tabs" id="p-tabs">
+      <button data-tab="wh" class="on">Magazyn</button>
+      <button data-tab="quests">Zadania</button>
+      <button data-tab="album">Album</button>
+      <button data-tab="stats">Gracze</button>
+      <button data-tab="log">Dziennik i kosz</button>
+      <button data-tab="rank">Ranking</button>
+      <button data-tab="farm">Farma</button>
+    </nav>
+    <div class="sheet-body" id="p-body"></div>
+  </div>
+</div>
+
+<div id="shop" class="hidden">
+  <div class="sheet paper">
+    <div class="sheet-head"><h2>Sklep rybacki</h2><span class="cash" id="shop-cash"></span></div>
+    <nav class="tabs" id="shop-tabs"></nav>
+    <div class="shop-grid" id="shop-grid"></div>
+    <div class="sheet-foot">E albo Esc zamyka. Kupione bloki trafiają do wspólnego magazynu farmy.</div>
+  </div>
+</div>
+
+<div id="menu" class="hidden">
+  <div class="m-sheet paper">
+    <div class="m-head"><div><h1>Rybna Wyspa</h1><p>Wspólna farma ryb z Narwi</p></div><div class="stamp">GZOWO<br>LABS</div></div>
+    <nav class="tabs" id="m-tabs">
+      <button data-tab="play" class="on">Graj</button>
+      <button data-tab="settings">Ustawienia</button>
+      <button data-tab="controls">Sterowanie</button>
+      <button data-tab="credits">Autorzy</button>
+    </nav>
+    <section class="m-pane on" data-pane="play">
+      <label class="field">Imię i nazwisko wędkarza<input id="nick" maxlength="16" spellcheck="false" autocomplete="off"></label>
+      <div class="field">Kolor kamizelki<div class="colors" id="colors"></div></div>
+      <button id="play-pub" class="play-btn">Na publiczną wyspę</button>
+      <div class="m-private">
+        <button id="play-new" class="btn">Nowa prywatna</button>
+        <div class="code-join"><input id="code" maxlength="6" placeholder="KOD" spellcheck="false" autocomplete="off"><button id="play-code" class="btn">Dołącz</button></div>
+      </div>
+      <div id="recent"></div>
+      <p id="net-status" class="net">Łączenie z serwerem…</p>
+    </section>
+    <section class="m-pane" data-pane="settings" id="settings"></section>
+    <section class="m-pane" data-pane="controls">
+      <div class="keys">
+        <div><b>W A S D</b><span>chodzenie</span></div>
+        <div><b>Shift</b><span>sprint, przy budowaniu przyciąganie</span></div>
+        <div><b>Spacja</b><span>skok (z plecakiem trzymaj)</span></div>
+        <div><b>1-9, kółko</b><span>pasek (1 to ręce)</span></div>
+        <div><b>LPM</b><span>weź rybę, pompuj, postaw blok</span></div>
+        <div><b>PPM</b><span>rzuć rybę, zdejmij blok</span></div>
+        <div><b>Q</b><span>wysyp cały stos</span></div>
+        <div><b>R, T</b><span>obrót bloku</span></div>
+        <div><b>Z, X</b><span>pochylenie bloku</span></div>
+        <div><b>E</b><span>sklep</span></div>
+        <div><b>Tab</b><span>rejestr farmy</span></div>
+        <div><b>Esc</b><span>pauza</span></div>
+      </div>
+    </section>
+    <section class="m-pane" data-pane="credits" id="credits"></section>
+  </div>
+</div>
+
+<div id="pause" class="hidden">
+  <div class="m-sheet m-small paper">
+    <h2>Pauza</h2>
+    <button id="resume" class="play-btn">Wracam na wyspę</button>
+    <div id="pause-info"></div>
+    <button id="to-menu" class="btn">Wyjdź do menu</button>
+  </div>
+</div>
+
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

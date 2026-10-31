@@ -1,0 +1,84 @@
+# Rybna Wyspa sound effects credits
+
+Every recording is a Freesound sound under CC0 1.0 (Public Domain Dedication). The licence was checked on each sound page.
+Trimmed, faded, looped where needed and loudness-normalised with ffmpeg.
+
+- `flop_1.mp3`: "fish slap ground or snow writhing wet.wav" by kyles (Freesound, CC0 1.0) https://freesound.org/people/kyles/sounds/450830/
+- `flop_2.mp3`: "fish slap ground or snow writhing wet.wav" by kyles (Freesound, CC0 1.0) https://freesound.org/people/kyles/sounds/450830/
+- `flop_3.mp3`: "fish slap ground or snow writhing wet.wav" by kyles (Freesound, CC0 1.0) https://freesound.org/people/kyles/sounds/450830/
+- `flop_4.mp3`: "Fish flopping over on sand" by adviseme333 (Freesound, CC0 1.0) https://freesound.org/people/adviseme333/sounds/679389/
+- `flop_5.mp3`: "Fish flopping over on sand" by adviseme333 (Freesound, CC0 1.0) https://freesound.org/people/adviseme333/sounds/679389/
+- `land_soft_1.mp3`: "wet thwack" by adviseme333 (Freesound, CC0 1.0) https://freesound.org/people/adviseme333/sounds/679391/
+- `land_soft_2.mp3`: "wet clay thud" by HighWaistedPants (Freesound, CC0 1.0) https://freesound.org/people/HighWaistedPants/sounds/847272/
+- `land_soft_3.mp3`: "Meat Slap 1" by magnuswaker (Freesound, CC0 1.0) https://freesound.org/people/magnuswaker/sounds/540077/
+- `land_hard_1.mp3`: "d0 Meatslap on Glass 2" by dav0r (Freesound, CC0 1.0) https://freesound.org/people/dav0r/sounds/223966/
+- `land_hard_2.mp3`: "wet_plastic_hit.wav" by j1987 (Freesound, CC0 1.0) https://freesound.org/people/j1987/sounds/532139/
+- `pickup_1.mp3`: "Splat/Squish 3" by mrickey13 (Freesound, CC0 1.0) https://freesound.org/people/mrickey13/sounds/515620/
+- `pickup_2.mp3`: "So slimy!" by Breviceps (Freesound, CC0 1.0) https://freesound.org/people/Breviceps/sounds/445968/
+- `pickup_3.mp3`: "squishing gel between hands" by breadparticles (Freesound, CC0 1.0) https://freesound.org/people/breadparticles/sounds/575333/
+- `throw_1.mp3`: "Throw 1.mp3" by deleted_user_6479820 (Freesound, CC0 1.0) https://freesound.org/people/deleted_user_6479820/sounds/394873/
+- `throw_2.mp3`: "Lacrosse pass" by Lorenz01 (Freesound, CC0 1.0) https://freesound.org/people/Lorenz01/sounds/632700/
+- `splash_small_1.mp3`: "Water plopping in pulling out small object.wav" by vjoe1985 (Freesound, CC0 1.0) https://freesound.org/people/vjoe1985/sounds/233975/
+- `splash_small_2.mp3`: "Fishing Lure Plop Water - Game SFX (2 or 2)" by el_boss (Freesound, CC0 1.0) https://freesound.org/people/el_boss/sounds/853279/
+- `splash_big.mp3`: "jump into water splash sound.wav" by NIkhill Kumar (Freesound, CC0 1.0) https://freesound.org/people/NIkhill%20Kumar/sounds/320330/
+- `dump.mp3`: "Pouring Potatoes Onto a Table.wav" by dhallcomposer (Freesound, CC0 1.0) https://freesound.org/people/dhallcomposer/sounds/656727/
+- `sell_1.mp3`: "coins 05.wav" by Anthousai (Freesound, CC0 1.0) https://freesound.org/people/Anthousai/sounds/336571/
+- `sell_2.mp3`: "cash register.wav" by cognito perceptu (Freesound, CC0 1.0) https://freesound.org/people/cognito%20perceptu/sounds/83915/
+- `sell_3.mp3`: "Cash Register.wav" by C-V (Freesound, CC0 1.0) https://freesound.org/people/C-V/sounds/534066/
+- `sell_big.mp3`: "bell toy cash register ding.flac" by kyles (Freesound, CC0 1.0) https://freesound.org/people/kyles/sounds/453763/
+- `level_up.mp3`: "Glockenspiel melody 140bpm.m4a" by Anasas6 (Freesound, CC0 1.0) https://freesound.org/people/Anasas6/sounds/502882/
+- `quest_done.mp3`: "Thin bell ding 2" by Khrinx (Freesound, CC0 1.0) https://freesound.org/people/Khrinx/sounds/333695/
+- `rare.mp3`: "Glockenspiel Glock" by nomiqbomi (Freesound, CC0 1.0) https://freesound.org/people/nomiqbomi/sounds/552536/
+- `place_wood.mp3`: "Wood block clacking.wav" by 200221-WeanBekker (Freesound, CC0 1.0) https://freesound.org/people/200221-WeanBekker/sounds/543705/
+- `place_metal.mp3`: "Metallic Clink 2.wav" by HenKonen (Freesound, CC0 1.0) https://freesound.org/people/HenKonen/sounds/682153/
+- `remove.mp3`: "Coin Bag Pickup Drop.wav" by ralph.whitehead (Freesound, CC0 1.0) https://freesound.org/people/ralph.whitehead/sounds/565699/
+- `rotate.mp3`: "Click_9" by SignatureSoundsOrg (Freesound, CC0 1.0) https://freesound.org/people/SignatureSoundsOrg/sounds/872341/
+- `deny.mp3`: "DullThud.wav" by TriqyStudio (Freesound, CC0 1.0) https://freesound.org/people/TriqyStudio/sounds/653370/
+- `conveyor_loop.mp3`: "belt drive motor machine industrial wobble.flac" by kyles (Freesound, CC0 1.0) https://freesound.org/people/kyles/sounds/455666/
+- `flume_loop.mp3`: "Water Stream (Looped)" by tymorafarr (Freesound, CC0 1.0) https://freesound.org/people/tymorafarr/sounds/249666/
+- `pump_manual.mp3`: "Hand Pump" by Jofae (Freesound, CC0 1.0) https://freesound.org/people/Jofae/sounds/361771/
+- `spawner_auto.mp3`: "Whirr_industrial_2.WAV" by deleted_user_2104797 (Freesound, CC0 1.0) https://freesound.org/people/deleted_user_2104797/sounds/148957/
+- `bubble_1.mp3`: "Bubbles In Water" by calebrankin (Freesound, CC0 1.0) https://freesound.org/people/calebrankin/sounds/529383/
+- `bubble_2.mp3`: "Bubbles In Water" by calebrankin (Freesound, CC0 1.0) https://freesound.org/people/calebrankin/sounds/529383/
+- `freezer.mp3`: "Top loading freezer lid open" by kezzo78 (Freesound, CC0 1.0) https://freesound.org/people/kezzo78/sounds/457069/
+- `smoker.mp3`: "Fire Crackle and Flames 002" by TheWoodlandNomad (Freesound, CC0 1.0) https://freesound.org/people/TheWoodlandNomad/sounds/363092/
+- `zap.mp3`: "Electrical Shock (Zap).wav" by BigKahuna360 (Freesound, CC0 1.0) https://freesound.org/people/BigKahuna360/sounds/160421/
+- `geiger.mp3`: "Geiger counter (dry)" by Sanderboah (Freesound, CC0 1.0) https://freesound.org/people/Sanderboah/sounds/674113/
+- `machine.mp3`: "machine industrial metal shaper3 trim and handle.flac" by kyles (Freesound, CC0 1.0) https://freesound.org/people/kyles/sounds/453311/
+- `polish.mp3`: "brushing shoes_mixdown" by hello_world+123 (Freesound, CC0 1.0) https://freesound.org/people/hello_world+123/sounds/764988/
+- `ice_crackle.mp3`: "Ice cracking_northern87" by northern87 (Freesound, CC0 1.0) https://freesound.org/people/northern87/sounds/369982/
+- `step_grass_1.mp3`: "Hiking Boot Footsteps on Grass" by Fission9 (Freesound, CC0 1.0) https://freesound.org/people/Fission9/sounds/521587/
+- `step_grass_2.mp3`: "Hiking Boot Footsteps on Grass" by Fission9 (Freesound, CC0 1.0) https://freesound.org/people/Fission9/sounds/521587/
+- `step_grass_3.mp3`: "Hiking Boot Footsteps on Grass" by Fission9 (Freesound, CC0 1.0) https://freesound.org/people/Fission9/sounds/521587/
+- `step_grass_4.mp3`: "Hiking Boot Footsteps on Grass" by Fission9 (Freesound, CC0 1.0) https://freesound.org/people/Fission9/sounds/521587/
+- `step_sand_1.mp3`: "Footsteps_Mountain_Boots_Wet_Sand_Sequence_Mono.wav" by Nox_Sound (Freesound, CC0 1.0) https://freesound.org/people/Nox_Sound/sounds/564893/
+- `step_sand_2.mp3`: "Footsteps_Mountain_Boots_Wet_Sand_Sequence_Mono.wav" by Nox_Sound (Freesound, CC0 1.0) https://freesound.org/people/Nox_Sound/sounds/564893/
+- `step_sand_3.mp3`: "Footsteps_Mountain_Boots_Wet_Sand_Sequence_Mono.wav" by Nox_Sound (Freesound, CC0 1.0) https://freesound.org/people/Nox_Sound/sounds/564893/
+- `step_sand_4.mp3`: "Footsteps_Mountain_Boots_Wet_Sand_Sequence_Mono.wav" by Nox_Sound (Freesound, CC0 1.0) https://freesound.org/people/Nox_Sound/sounds/564893/
+- `step_wood_1.mp3`: "Footsteps_Wood_Walk_Mono.wav" by Nox_Sound (Freesound, CC0 1.0) https://freesound.org/people/Nox_Sound/sounds/543685/
+- `step_wood_2.mp3`: "Footsteps_Wood_Walk_Mono.wav" by Nox_Sound (Freesound, CC0 1.0) https://freesound.org/people/Nox_Sound/sounds/543685/
+- `step_wood_3.mp3`: "Footsteps_Wood_Walk_Mono.wav" by Nox_Sound (Freesound, CC0 1.0) https://freesound.org/people/Nox_Sound/sounds/543685/
+- `step_wood_4.mp3`: "Footsteps_Wood_Walk_Mono.wav" by Nox_Sound (Freesound, CC0 1.0) https://freesound.org/people/Nox_Sound/sounds/543685/
+- `step_metal_1.mp3`: "Footsteps on Metal" by IENBA (Freesound, CC0 1.0) https://freesound.org/people/IENBA/sounds/698697/
+- `step_metal_2.mp3`: "Footsteps on Metal" by IENBA (Freesound, CC0 1.0) https://freesound.org/people/IENBA/sounds/698697/
+- `step_metal_3.mp3`: "Footsteps on Metal" by IENBA (Freesound, CC0 1.0) https://freesound.org/people/IENBA/sounds/698697/
+- `step_metal_4.mp3`: "Footsteps on Metal" by IENBA (Freesound, CC0 1.0) https://freesound.org/people/IENBA/sounds/698697/
+- `jump.mp3`: "jumping "hop!" sound! .wav" by jburunet (Freesound, CC0 1.0) https://freesound.org/people/jburunet/sounds/509410/
+- `land.mp3`: "single big impact, large creature jumping down.wav" by vestibule-door (Freesound, CC0 1.0) https://freesound.org/people/vestibule-door/sounds/669714/
+- `jetpack_loop.mp3`: "Jetpack Loop" by jacksonacademyashmore (Freesound, CC0 1.0) https://freesound.org/people/jacksonacademyashmore/sounds/402816/
+- `thunder_1.mp3`: "Thunder 07" by Emulius (Freesound, CC0 1.0) https://freesound.org/people/Emulius/sounds/744722/
+- `thunder_2.mp3`: "Thunder Clap" by DaniloSFX (Freesound, CC0 1.0) https://freesound.org/people/DaniloSFX/sounds/672776/
+- `meteor.mp3`: "Sound Design Elements Whoosh SFX 032" by AudioPapkin (Freesound, CC0 1.0) https://freesound.org/people/AudioPapkin/sounds/812667/
+- `wind_gust.mp3`: "wind 8" by ZIP.Creates (Freesound, CC0 1.0) https://freesound.org/people/ZIP.Creates/sounds/726319/
+- `rocket.mp3`: "hobby rocket blastoff" by reg7783 (Freesound, CC0 1.0) https://freesound.org/people/reg7783/sounds/730041/
+- `fire_whoosh.mp3`: "Fire-Bottle_AUDIO.mp3" by RedVulpus (Freesound, CC0 1.0) https://freesound.org/people/RedVulpus/sounds/457209/
+- `printer.mp3`: "3dprinter" by kitten_prince (Freesound, CC0 1.0) https://freesound.org/people/kitten_prince/sounds/241801/
+- `glitch.mp3`: "08-data-transmission.wav" by drzhnn (Freesound, CC0 1.0) https://freesound.org/people/drzhnn/sounds/199939/
+- `growl.mp3`: "Deep Growl 1.wav" by noahpardo (Freesound, CC0 1.0) https://freesound.org/people/noahpardo/sounds/345733/
+- `shimmer.mp3`: "Magic Wand Glitter" by qubodup (Freesound, CC0 1.0) https://freesound.org/people/qubodup/sounds/211624/
+- `ui_click.mp3`: "UI_Click.wav" by finix473 (Freesound, CC0 1.0) https://freesound.org/people/finix473/sounds/546974/
+- `ui_open.mp3`: "inventory_click.wav" by obrymec (Freesound, CC0 1.0) https://freesound.org/people/obrymec/sounds/580826/
+- `ui_close.mp3`: "Window slide closed.wav" by Dave_Gibson (Freesound, CC0 1.0) https://freesound.org/people/Dave_Gibson/sounds/582425/
+- `ui_buy.mp3`: "Item_Purchase" by BaggoNotes (Freesound, CC0 1.0) https://freesound.org/people/BaggoNotes/sounds/720218/
+- `ui_tab.mp3`: "slide-click.wav" by Qat (Freesound, CC0 1.0) https://freesound.org/people/Qat/sounds/108335/
+- `ui_error.mp3`: "Vintage computer -Error report" by OptronTeamFilms (Freesound, CC0 1.0) https://freesound.org/people/OptronTeamFilms/sounds/811740/

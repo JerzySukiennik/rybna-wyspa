@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rybna Wyspa modele</title>
+<!-- Rybna Wyspa: model viewer and contact sheets for fish, avatar and decorations. -->
+<style>
+  :root { --ink: #23303a; --sub: #5c6b76; --bg1: #cfe6f6; --bg2: #eef3f2; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg2); color: var(--ink); font: 13px/1.25 -apple-system, "SF Pro Text", "Segoe UI", sans-serif; overflow: hidden; }
+  canvas { display: block; position: absolute; inset: 0; }
+  #grid { position: absolute; inset: 0; pointer-events: none; }
+  .cell { position: absolute; border-right: 1px solid rgba(35, 48, 58, 0.08); border-bottom: 1px solid rgba(35, 48, 58, 0.08); }
+  .lab { position: absolute; left: 8px; top: 5px; white-space: nowrap; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7); }
+  .lab b { font-weight: 650; }
+  .lab .r { font-weight: 600; margin-left: 6px; }
+  .lab .t { color: var(--sub); margin-left: 6px; font-variant-numeric: tabular-nums; }
+  #title { position: absolute; left: 10px; top: 8px; font-weight: 700; font-size: 15px; pointer-events: none; }
+  .tag { position: absolute; padding: 1px 6px; border-radius: 6px; background: rgba(255, 255, 255, 0.82); white-space: nowrap; font-size: 12px; transform: translate(-50%, -100%); }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="grid"></div>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { FISH_IDS, fishGeometry, fishDims } from '../../src/models/fish.js';
+import { buildAvatar, buildViewHands } from '../../src/models/avatar.js';
+import { DECO_IDS, decoGeometry } from '../../src/models/deco.js';
+import { SPECIES_BY_ID, RARITIES } from '../../src/data/species.js';
+
+const Q = new URLSearchParams(location.search);
+const SHEET = Q.get('sheet');
+const ONE = Q.get('fish');
+const W = SHEET || ONE ? 1600 : innerWidth, Hh = SHEET || ONE ? 1000 : innerHeight;
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(SHEET || ONE ? 1 : Math.min(2, devicePixelRatio));
+renderer.setSize(W, Hh);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.setScissorTest(false);
+document.body.prepend(renderer.domElement);
+
+function glowMaterial() {
+  const m = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
+  m.onBeforeCompile = (sh) => {
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nattribute float aGlow;\nvarying float vGlow;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvGlow = aGlow;');
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying float vGlow;')
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += vColor.rgb * vGlow * 1.25;');
+  };
+  return m;
+}
+const FISH_MAT = glowMaterial();
+const PLAIN_MAT = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
+
+function makeStage(span) {
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color('#d6e8f3');
+  const hemi = new THREE.HemisphereLight('#dceeff', '#9a9488', 1.15);
+  scene.add(hemi);
+  const sun = new THREE.DirectionalLight('#fff1dc', 2.1);
+  sun.position.set(span * 0.5, span * 1.2, span * 0.8);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  const sc = sun.shadow.camera;
+  sc.left = -span; sc.right = span; sc.top = span; sc.bottom = -span; sc.near = 0.01; sc.far = span * 6;
+  sun.shadow.bias = -0.0005;
+  sun.shadow.normalBias = span * 0.004;
+  sun.shadow.radius = 4;
+  scene.add(sun, sun.target);
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(span * 40, span * 40), new THREE.MeshLambertMaterial({ color: '#c9ccc8' }));
+  ground.rotation.x = -Math.PI / 2;
+  ground.receiveShadow = true;
+  scene.add(ground);
+  return { scene, sun, ground };
+}
+
+function fishMesh(id) {
+  const m = new THREE.Mesh(fishGeometry(id), FISH_MAT);
+  m.castShadow = true;
+  m.receiveShadow = true;
+  return m;
+}
+
+function shadowAll(o) { o.traverse((c) => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } }); return o; }
+
+function frame(cam, obj, dir, up, pad, aspect) {
+  obj.updateMatrixWorld(true);
+  const target = new THREE.Box3().setFromObject(obj).getCenter(new THREE.Vector3());
+  cam.up.copy(up);
+  cam.position.copy(target).addScaledVector(dir.clone().normalize(), 50);
+  cam.lookAt(target);
+  cam.updateMatrixWorld(true);
+  const inv = cam.matrixWorldInverse;
+  const v = new THREE.Vector3();
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  obj.traverse((c) => {
+    if (!c.isMesh || !c.visible) return;
+    const p = c.geometry.getAttribute('position');
+    for (let i = 0; i < p.count; i += 1) {
+      v.fromBufferAttribute(p, i).applyMatrix4(c.matrixWorld).applyMatrix4(inv);
+      x0 = Math.min(x0, v.x); x1 = Math.max(x1, v.x); y0 = Math.min(y0, v.y); y1 = Math.max(y1, v.y);
+    }
+  });
+  let w = (x1 - x0) * (1 + pad), h = (y1 - y0) * (1 + pad);
+  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+  if (w / h > aspect) h = w / aspect; else w = h * aspect;
+  cam.left = cx - w / 2; cam.right = cx + w / 2; cam.top = cy + h / 2; cam.bottom = cy - h / 2;
+  cam.near = 0.01; cam.far = 200;
+  cam.updateProjectionMatrix();
+}
+
+function rarityOf(id) {
+  const s = SPECIES_BY_ID[id];
+  return s ? RARITIES[s.rarity] : { name: '?', color: '#888' };
+}
+
+const grid = document.getElementById('grid');
+function addCell(x, y, w, h, html) {
+  const d = document.createElement('div');
+  d.className = 'cell';
+  Object.assign(d.style, { left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px' });
+  d.innerHTML = `<div class="lab">${html}</div>`;
+  grid.appendChild(d);
+}
+function title(t) { const d = document.createElement('div'); d.id = 'title'; d.textContent = t; grid.appendChild(d); }
+
+const views = [];
+function addView(stage, obj, rect, dir, up, pad = 0.12, persp = 0) {
+  const cam = persp ? new THREE.PerspectiveCamera(persp, rect.w / rect.h, 0.05, 400) : new THREE.OrthographicCamera(-1, 1, 1, -1, 0.01, 200);
+  views.push({ stage, obj, rect, dir, up, pad, cam, persp });
+}
+
+function fitPersp(cam, obj, dir, pad) {
+  const box = new THREE.Box3().setFromObject(obj);
+  const sph = box.getBoundingSphere(new THREE.Sphere());
+  const dist = (sph.radius * (1 + pad)) / Math.sin(THREE.MathUtils.degToRad(cam.fov / 2)) * (cam.aspect < 1 ? 1 / cam.aspect : 1);
+  cam.position.copy(sph.center).addScaledVector(dir.clone().normalize(), dist);
+  cam.up.set(0, 1, 0);
+  cam.lookAt(sph.center);
+  cam.updateProjectionMatrix();
+}
+
+function renderViews() {
+  renderer.setScissorTest(true);
+  renderer.setClearColor('#eef3f2');
+  renderer.clear();
+  for (const v of views) {
+    const { stage, obj, rect, cam } = v;
+    stage.scene.children.forEach((c) => { if (c.userData.model) c.visible = c === obj; });
+    if (v.persp) fitPersp(cam, obj, v.dir, v.pad); else frame(cam, obj, v.dir, v.up, v.pad, rect.w / rect.h);
+    const box = new THREE.Box3().setFromObject(obj);
+    const ctr = box.getCenter(new THREE.Vector3());
+    const span = box.getSize(new THREE.Vector3()).length() * 0.6 + 0.2;
+    stage.sun.target.position.copy(ctr);
+    stage.sun.position.copy(ctr).add(new THREE.Vector3(span * 0.6, span * 1.4, span * 0.9));
+    const sc = stage.sun.shadow.camera;
+    sc.left = -span; sc.right = span; sc.top = span; sc.bottom = -span; sc.far = span * 6; sc.updateProjectionMatrix();
+    stage.sun.shadow.normalBias = span * 0.003;
+    const y = Hh - rect.y - rect.h;
+    renderer.setViewport(rect.x, y, rect.w, rect.h);
+    renderer.setScissor(rect.x, y, rect.w, rect.h);
+    renderer.render(stage.scene, cam);
+  }
+  renderer.setScissorTest(false);
+}
+
+const SIDE = new THREE.Vector3(0, 1, 0), SIDE_UP = new THREE.Vector3(0, 0, -1);
+const TQ = new THREE.Vector3(0.6, 0.42, 0.72), UP = new THREE.Vector3(0, 1, 0);
+
+function fishPair(id) {
+  const lying = fishMesh(id);
+  lying.rotation.x = -Math.PI / 2;
+  lying.updateMatrixWorld(true);
+  const b1 = new THREE.Box3().setFromObject(lying);
+  lying.position.y = -b1.min.y;
+  const standing = fishMesh(id);
+  standing.updateMatrixWorld(true);
+  const b2 = new THREE.Box3().setFromObject(standing);
+  standing.position.y = -b2.min.y + 0.03;
+  lying.userData.model = standing.userData.model = true;
+  return [lying, standing];
+}
+
+function fishSheet(ids, label, cols = 3, rows = 6) {
+  const stage = makeStage(1);
+  title(label);
+  const top = 30;
+  const cw = Math.floor(W / cols), ch = Math.floor((Hh - top) / rows);
+  ids.forEach((id, i) => {
+    const cx = (i % cols) * cw, cy = top + Math.floor(i / cols) * ch;
+    const [lying, standing] = fishPair(id);
+    stage.scene.add(lying, standing);
+    const sw = Math.round(cw * 0.57);
+    addView(stage, lying, { x: cx, y: cy + 16, w: sw, h: ch - 16 }, SIDE, SIDE_UP, 0.06);
+    addView(stage, standing, { x: cx + sw, y: cy + 16, w: cw - sw, h: ch - 16 }, TQ, UP, 0.1);
+    const s = SPECIES_BY_ID[id], r = rarityOf(id), g = fishGeometry(id), d = fishDims(id);
+    addCell(cx, cy, cw, ch, `<b>${s ? s.name : id}</b><span class="r" style="color:${r.color}">${r.name}</span><span class="t">${g.getAttribute('position').count / 3} tris · h ${d.h.toFixed(2)} w ${d.w.toFixed(2)}</span>`);
+  });
+  renderViews();
+}
+
+function oneFish(id) {
+  const stage = makeStage(1);
+  const [lying, standing] = fishPair(id);
+  stage.scene.add(lying, standing);
+  const s = SPECIES_BY_ID[id];
+  title(`${s ? s.name : id} (${id}) · ${fishGeometry(id).getAttribute('position').count / 3} tris`);
+  addView(stage, lying, { x: 0, y: 30, w: 1000, h: 480 }, SIDE, SIDE_UP, 0.05);
+  addView(stage, standing, { x: 1000, y: 30, w: 600, h: 480 }, TQ, UP, 0.08);
+  addView(stage, standing, { x: 0, y: 510, w: 540, h: 490 }, new THREE.Vector3(1, 0.25, 0.08), UP, 0.08);
+  addView(stage, standing, { x: 540, y: 510, w: 530, h: 490 }, new THREE.Vector3(0.02, 1, 0.12), new THREE.Vector3(1, 0, 0), 0.08);
+  addView(stage, standing, { x: 1070, y: 510, w: 530, h: 490 }, new THREE.Vector3(-0.7, 0.3, -0.6), UP, 0.08);
+  renderViews();
+}
+
+function avatarSheet() {
+  const stage = makeStage(2);
+  title('Awatar wędkarza, ręce FPP');
+  const mk = (color, walk) => {
+    const a = buildAvatar(color);
+    shadowAll(a);
+    if (walk) {
+      a.getObjectByName('armL').rotation.x = 0.55; a.getObjectByName('armR').rotation.x = -0.55;
+      a.getObjectByName('legL').rotation.x = -0.45; a.getObjectByName('legR').rotation.x = 0.45;
+      a.getObjectByName('head').rotation.y = 0.25;
+    }
+    a.userData.model = true;
+    stage.scene.add(a);
+    return a;
+  };
+  const a1 = mk(0xe8742c, false), a2 = mk(0xe8742c, false), a3 = mk('#2f7fd8', true), a4 = mk('#2f7fd8', true), a5 = mk('#3fae5a', false);
+  const quad = new THREE.Group();
+  ['#c8323c', '#f2c230', '#8a4fd8', '#22a6a0'].forEach((c, i) => { const a = buildAvatar(c); shadowAll(a); a.position.x = (i - 1.5) * 0.85; a.rotation.y = 0.35; quad.add(a); });
+  quad.userData.model = true;
+  stage.scene.add(quad);
+  const w = 400, h = 485, t = 30;
+  addView(stage, a1, { x: 0, y: t, w, h }, new THREE.Vector3(0, 0.12, -1), UP, 0.08);
+  addView(stage, a2, { x: 400, y: t, w, h }, new THREE.Vector3(-0.75, 0.25, -0.7), UP, 0.08);
+  addView(stage, a3, { x: 800, y: t, w, h }, new THREE.Vector3(1, 0.12, 0), UP, 0.08);
+  addView(stage, a4, { x: 1200, y: t, w, h }, new THREE.Vector3(-0.7, 0.3, -0.75), UP, 0.08);
+  addView(stage, a5, { x: 0, y: t + h, w, h }, new THREE.Vector3(0.4, 0.2, 1), UP, 0.08);
+  addView(stage, quad, { x: 400, y: t + h, w: 600, h }, new THREE.Vector3(-0.2, 0.25, -1), UP, 0.06);
+  addCell(0, t, w, h, '<b>przód</b><span class="t">pomarańczowy</span>');
+  addCell(400, t, w, h, '<b>3/4</b>');
+  addCell(800, t, w, h, '<b>chód, bok</b><span class="t">niebieski</span>');
+  addCell(1200, t, w, h, '<b>chód, 3/4</b>');
+  addCell(0, t + h, w, h, '<b>tył</b><span class="t">zielony</span>');
+  addCell(400, t + h, 600, h, '<b>kolory kamizelki i czapki</b>');
+  const hands = buildViewHands();
+  shadowAll(hands);
+  const hs = new THREE.Scene();
+  hs.background = new THREE.Color('#9fc7e0');
+  hs.add(new THREE.HemisphereLight('#e6f2ff', '#7a8a6a', 1.3));
+  const sun = new THREE.DirectionalLight('#fff1dc', 1.8); sun.position.set(1, 3, 1); hs.add(sun);
+  const gr = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.MeshLambertMaterial({ color: '#7cba5a' }));
+  gr.rotation.x = -Math.PI / 2; gr.position.y = -1.62; hs.add(gr);
+  hs.add(hands);
+  const stack = new THREE.Group();
+  ['ploc', 'okon', 'leszcz'].forEach((id, i) => { const f = new THREE.Mesh(fishGeometry(id), FISH_MAT); f.scale.setScalar(0.3); f.rotation.set(-Math.PI / 2, 0, (i - 1) * 0.15); f.position.set(0, -0.255 + i * 0.03, -0.44); stack.add(f); });
+  hs.add(stack);
+  const fp = new THREE.PerspectiveCamera(70, 600 / h, 0.02, 100);
+  views.push({ custom: true, rect: { x: 1000, y: t + h, w: 600, h }, draw(rect) { stack.visible = Q.get('stack') !== '0'; renderer.render(hs, fp); } });
+  addCell(1000, t + h, 600, h, '<b>ręce FPP</b><span class="t">kamera w (0,0,0), patrzy w -Z, z kupką ryb</span>');
+  const old = renderViews;
+  renderer.setScissorTest(true);
+  old();
+  renderer.setScissorTest(true);
+  for (const v of views) if (v.custom) {
+    const y = Hh - v.rect.y - v.rect.h;
+    renderer.setViewport(v.rect.x, y, v.rect.w, v.rect.h);
+    renderer.setScissor(v.rect.x, y, v.rect.w, v.rect.h);
+    v.draw(v.rect);
+  }
+  renderer.setScissorTest(false);
+}
+
+function decoSheet() {
+  const stage = makeStage(4);
+  title('Dekoracje');
+  const cols = 6, rows = 3, top = 30;
+  const cw = Math.floor(W / cols), ch = Math.floor((Hh - top) / rows);
+  DECO_IDS.forEach((id, i) => {
+    const g = decoGeometry(id);
+    const m = new THREE.Mesh(g, PLAIN_MAT);
+    m.castShadow = m.receiveShadow = true;
+    m.userData.model = true;
+    if (id === 'lily') m.position.y = 0.02;
+    stage.scene.add(m);
+    const cx = (i % cols) * cw, cy = top + Math.floor(i / cols) * ch;
+    addView(stage, m, { x: cx, y: cy + 16, w: cw, h: ch - 16 }, new THREE.Vector3(0.75, 0.42, 1), UP, 0.08, 30);
+    g.computeBoundingBox();
+    const s = g.boundingBox.getSize(new THREE.Vector3());
+    addCell(cx, cy, cw, ch, `<b>${id}</b><span class="t">${g.getAttribute('position').count / 3} tris · ${s.x.toFixed(1)}×${s.y.toFixed(1)}×${s.z.toFixed(1)} m</span>`);
+  });
+  renderViews();
+}
+
+function freeScene() {
+  const stage = makeStage(30);
+  const { scene } = stage;
+  scene.background = new THREE.Color('#cfe4f3');
+  const cam = new THREE.PerspectiveCamera(45, W / Hh, 0.05, 500);
+  cam.position.set(6, 9, 22);
+  const css = new CSS2DRenderer();
+  css.setSize(W, Hh);
+  Object.assign(css.domElement.style, { position: 'absolute', inset: '0', pointerEvents: 'none' });
+  document.body.appendChild(css.domElement);
+  const tag = (obj, text, y) => { const d = document.createElement('div'); d.className = 'tag'; d.innerHTML = text; const o = new CSS2DObject(d); o.position.set(0, y, 0); obj.add(o); };
+  FISH_IDS.forEach((id, i) => {
+    const [lying, standing] = fishPair(id);
+    const x = (i % 17) * 1.25 - 10, z = Math.floor(i / 17) * 3.2 - 3;
+    lying.position.x = standing.position.x = x;
+    lying.position.z = z; standing.position.z = z + 1.3;
+    scene.add(lying, standing);
+    const s = SPECIES_BY_ID[id], r = rarityOf(id);
+    tag(lying, `${s ? s.name : id} <span style="color:${r.color}">${r.name}</span> ${fishGeometry(id).getAttribute('position').count / 3}`, 0.25);
+  });
+  const av = shadowAll(buildAvatar(0xe8742c)); av.position.set(-13, 0, 6); scene.add(av);
+  const av2 = shadowAll(buildAvatar('#2f7fd8')); av2.position.set(-14.2, 0, 6);
+  scene.add(av2);
+  const hands = shadowAll(buildViewHands()); hands.position.set(-12, 1.6, 7.5); scene.add(hands);
+  DECO_IDS.forEach((id, i) => {
+    const m = new THREE.Mesh(decoGeometry(id), PLAIN_MAT);
+    m.castShadow = m.receiveShadow = true;
+    m.position.set((i % 9) * 5 - 20, id === 'lily' ? 0.02 : 0, -12 - Math.floor(i / 9) * 9);
+    scene.add(m);
+    tag(m, id, 0.3);
+  });
+  const ctl = new OrbitControls(cam, renderer.domElement);
+  ctl.target.set(0, 0, 0);
+  let t0 = performance.now();
+  const draw = () => {
+    const t = (performance.now() - t0) / 1000;
+    av2.getObjectByName('armL').rotation.x = Math.sin(t * 6) * 0.55; av2.getObjectByName('armR').rotation.x = -Math.sin(t * 6) * 0.55;
+    av2.getObjectByName('legL').rotation.x = -Math.sin(t * 6) * 0.45; av2.getObjectByName('legR').rotation.x = Math.sin(t * 6) * 0.45;
+    renderer.render(scene, cam);
+    css.render(scene, cam);
+  };
+  ctl.addEventListener('change', draw);
+  addEventListener('resize', () => { renderer.setSize(innerWidth, innerHeight); css.setSize(innerWidth, innerHeight); cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); draw(); });
+  ctl.update();
+  draw();
+  setTimeout(draw, 50);
+}
+
+window.__check = () => FISH_IDS.map((id) => {
+  const g = fishGeometry(id), d = fishDims(id);
+  g.computeBoundingBox();
+  const b = g.boundingBox;
+  const n = g.getAttribute('position').count;
+  const attrs = ['position', 'normal', 'color', 'aBend', 'aGlow'].every((a) => g.getAttribute(a) && g.getAttribute(a).count === n);
+  const bend = g.getAttribute('aBend').array, glow = g.getAttribute('aGlow').array;
+  let bmin = 9, bmax = -9, gmax = 0;
+  for (let i = 0; i < n; i++) { bmin = Math.min(bmin, bend[i]); bmax = Math.max(bmax, bend[i]); gmax = Math.max(gmax, glow[i]); }
+  const lim = ['jesiotr', 'sum', 'zloty_sum', 'potwor'].includes(id) ? 1000 : 700;
+  return { id, tris: n / 3, lim, len: +(b.max.x - b.min.x).toFixed(4), x0: +b.min.x.toFixed(4), cy: +((b.max.y + b.min.y) / 2).toFixed(4), cz: +((b.max.z + b.min.z) / 2).toFixed(4), h: d.h, w: d.w, attrs, indexed: !!g.index, bend: [+bmin.toFixed(3), +bmax.toFixed(3)], glow: +gmax.toFixed(2) };
+});
+
+try {
+  if (SHEET === 'fish1') fishSheet(FISH_IDS.slice(0, 17), 'Ryby 1-17 (bok i 3/4)');
+  else if (SHEET === 'fish2') fishSheet(FISH_IDS.slice(17), 'Ryby 18-34 (bok i 3/4)');
+  else if (SHEET === 'avatar') avatarSheet();
+  else if (SHEET === 'deco') decoSheet();
+  else if (Q.get('ids')) { const ids = Q.get('ids').split(','); const c = ids.length > 4 ? 3 : 2; fishSheet(ids, ids.join(', '), c, Math.ceil(ids.length / c)); }
+  else if (ONE) oneFish(ONE);
+  else freeScene();
+  window.__ready = true;
+} catch (e) {
+  window.__error = e.message + '\n' + e.stack;
+  console.error(e);
+}
+</script>
+</body>
+</html>

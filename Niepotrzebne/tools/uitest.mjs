@@ -1,0 +1,44 @@
+// Rybna Wyspa: UI smoke test (aim at a fish for the ID card, toast, stamp banner, shop, farm register, menu).
+import { createRequire } from 'node:module';
+import fs from 'node:fs';
+const require = createRequire('/Users/jurek/openclaw/node_modules/');
+const { chromium } = require('playwright-core');
+const OUT = '/Users/jurek/Downloads/Claude/Projects/Rybna Wyspa/Niepotrzebne/shots';
+const line = fs.readFileSync('/Users/jurek/Downloads/Claude/Projects/Rybna Wyspa/Niepotrzebne/tools/line.js', 'utf8');
+const browser = await chromium.launch({ executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: true, args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] });
+const page = await browser.newPage({ viewport: { width: 1440, height: 860 } });
+const logs = [];
+page.on('pageerror', (e) => logs.push('[pageerror] ' + e.message));
+page.on('console', (m) => { if (m.type() === 'error' && !m.text().includes('404')) logs.push('[err] ' + m.text()); });
+await page.goto('http://localhost:8740/?auto=solo&nolock&debug&fps&phase=0.2&weather=deszcz', { waitUntil: 'load' });
+await page.waitForFunction(() => window.__rw && window.__rw.playing, null, { timeout: 60000 });
+await page.evaluate(line);
+await page.waitForTimeout(5000);
+await page.evaluate(() => {
+  const g = __rw;
+  clearInterval(window.__pumpT);
+  let best = null;
+  for (const f of g.sim.fish.values()) { const p = f.body.translation(); if (!best || p.z > best.z) best = { x: p.x, y: p.y, z: p.z, id: f.id }; }
+  g.player.teleport(best.x - 1.6, 1.62, best.z + 1.6);
+  const e = { x: best.x - 1.6, y: 1.62 + 1.62, z: best.z + 1.6 };
+  const dx = best.x - e.x, dy = best.y - e.y, dz = best.z - e.z;
+  g.player.yaw = Math.atan2(-dx, -dz);
+  g.player.pitch = Math.atan2(dy, Math.hypot(dx, dz));
+  g.hud.toast('Kuba sprzedał Złotego Szczupaka za 1 240 zł');
+  g.hud.toast('Odblokowane: Więcierz, Rynna z wodą', 'gold');
+  g.hud.banner('Poziom 2!', 'Nowe rzeczy w sklepie', 6);
+  window.__dbg = best;
+});
+await page.waitForTimeout(600);
+await page.screenshot({ path: OUT + '/ui_play.png' });
+await page.evaluate(() => { __rw.hud.banner('', '', 0.01); __rw.panels.toggleShop(true); });
+await page.waitForTimeout(500);
+await page.screenshot({ path: OUT + '/ui_shop.png' });
+await page.evaluate(() => { __rw.panels.toggleShop(false); __rw.panels.tab = 'album'; __rw.panels.toggle(true); });
+await page.waitForTimeout(500);
+await page.screenshot({ path: OUT + '/ui_album.png' });
+await page.evaluate(() => { __rw.panels.toggle(false); __rw.playing = false; __rw.hud.show(false); document.getElementById('menu').classList.remove('hidden'); for (const b of document.querySelectorAll('#menu button')) b.disabled = false; });
+await page.waitForTimeout(700);
+await page.screenshot({ path: OUT + '/ui_menu.png' });
+console.log(logs.slice(-10).join('\n') || 'no errors');
+await browser.close();

@@ -1,0 +1,65 @@
+{
+  "waves": {
+    "file": "waves.mp3",
+    "dur": 30.0,
+    "loop": true,
+    "gain": 0.7,
+    "mood": "any"
+  },
+  "birds_day": {
+    "file": "birds_day.mp3",
+    "dur": 30.0,
+    "loop": true,
+    "gain": 0.6,
+    "mood": "day"
+  },
+  "night": {
+    "file": "night.mp3",
+    "dur": 30.0,
+    "loop": true,
+    "gain": 0.6,
+    "mood": "night"
+  },
+  "rain": {
+    "file": "rain.mp3",
+    "dur": 30.0,
+    "loop": true,
+    "gain": 0.6,
+    "mood": "any"
+  },
+  "storm": {
+    "file": "storm.mp3",
+    "dur": 30.0,
+    "loop": true,
+    "gain": 0.7,
+    "mood": "any"
+  },
+  "wind": {
+    "file": "wind.mp3",
+    "dur": 30.0,
+    "loop": true,
+    "gain": 0.55,
+    "mood": "any"
+  },
+  "snow": {
+    "file": "snow.mp3",
+    "dur": 30.0,
+    "loop": true,
+    "gain": 0.45,
+    "mood": "any"
+  },
+  "heat": {
+    "file": "heat.mp3",
+    "dur": 30.0,
+    "loop": true,
+    "gain": 0.5,
+    "mood": "day"
+  },
+  "fog": {
+    "file": "fog.mp3",
+    "dur": 30.0,
+    "loop": true,
+    "gain": 0.5,
+    "mood": "any"
+  }
+}
