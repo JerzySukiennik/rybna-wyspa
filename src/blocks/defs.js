@@ -586,11 +586,14 @@ function solidVisual(g, def) {
 function decoVisual(g, def) {
   const [w, , l] = def.dim;
   if (def.kind === 'lamp') {
-    g.box(0, 0.06, 0, 0.36, 0.12, 0.36, K.dark);
-    g.cyl(0, 0.12, 0, 0.06, 0.05, 2.15, 6, K.dark);
-    g.box(0, 2.42, 0, 0.3, 0.36, 0.3, K.lamp, { emit: 2.7, top: K.dark, emitTop: 0 });
-    for (const sx of [-1, 1]) for (const sz of [-1, 1]) g.box(sx * 0.15, 2.42, sz * 0.15, 0.03, 0.4, 0.03, K.dark);
-    g.cyl(0, 2.6, 0, 0.24, 0.02, 0.18, 4, K.dark, { rot: Math.PI / 4 });
+    g.cyl(0, 0, 0, 0.17, 0.14, 0.14, 8, K.stone, { top: K.stoneD });
+    g.cyl(0, 0.14, 0, 0.06, 0.045, 2.0, 8, '#2f3d35');
+    for (const y of [0.3, 1.9]) g.cyl(0, y, 0, 0.075, 0.075, 0.05, 8, '#41544a');
+    g.cyl(0, 2.14, 0, 0.11, 0.07, 0.08, 8, '#2f3d35');
+    g.cyl(0, 2.22, 0, 0.12, 0.16, 0.32, 6, K.lamp, { emit: 2.7, noTop: true, noBottom: true, rot: Math.PI / 6 });
+    for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2 + Math.PI / 6; g.line([Math.cos(a) * 0.12, 2.22, Math.sin(a) * 0.12], [Math.cos(a) * 0.16, 2.54, Math.sin(a) * 0.16], 0.012, '#2f3d35', 4); }
+    g.cyl(0, 2.54, 0, 0.21, 0.02, 0.16, 6, '#2f3d35', { rot: Math.PI / 6 });
+    g.cyl(0, 2.69, 0, 0.025, 0.025, 0.08, 6, '#2f3d35');
   } else if (def.shape === 'flag') {
     g.cyl(0, 0, 0, 0.05, 0.04, 3.1, 6, '#e9eef2');
     g.box(0.34, 2.79, 0, 0.6, 0.18, 0.02, '#f2efe6');

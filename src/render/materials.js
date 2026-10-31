@@ -15,7 +15,7 @@ export function blockMaterial(o = {}) {
       .replace('#include <color_vertex>', '#include <color_vertex>\nvEmit = aEmit;');
     s.fragmentShader = s.fragmentShader
       .replace('#include <common>', '#include <common>\nvarying float vEmit;\nuniform float uLamp;\nuniform float uTime;\nuniform float uWet;')
-      .replace('#include <color_fragment>', '#include <color_fragment>\nfloat nightLit = step(1.5, vEmit);\ndiffuseColor.rgb = mix(mix(diffuseColor.rgb, vec3(dot(diffuseColor.rgb, vec3(0.3, 0.59, 0.11))), 0.3 * uWet) * (1.0 - 0.25 * uWet), vec3(0.08, 0.1, 0.13), nightLit);')
+      .replace('#include <color_fragment>', '#include <color_fragment>\nfloat nightLit = step(1.5, vEmit);\ndiffuseColor.rgb = mix(mix(diffuseColor.rgb, vec3(dot(diffuseColor.rgb, vec3(0.3, 0.59, 0.11))), 0.3 * uWet) * (1.0 - 0.25 * uWet), vec3(0.42, 0.45, 0.47) + vColor.rgb * 0.18, nightLit);')
       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += vColor.rgb * mix(vEmit * (0.35 + uLamp * 1.5), (vEmit - 1.5) * uLamp * 3.2, nightLit);');
   };
   m.customProgramCacheKey = () => 'block-emit';

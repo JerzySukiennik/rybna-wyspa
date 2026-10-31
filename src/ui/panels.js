@@ -210,17 +210,17 @@ export class Panels {
         const l = s.up[u.id] || 0;
         const max = l >= u.vals.length - 1;
         const cost = max ? 0 : u.cost[l + 1];
-        html += `<div class="item"><b>${esc(u.name)}</b><div class="desc">${esc(u.desc)}</div><div class="own">teraz: ${esc(u.fmt(u.vals[l]))}${max ? '' : ` → ${esc(u.fmt(u.vals[l + 1]))}`}</div>`;
-        html += max ? `<div class="lv">maksymalny poziom</div>` : `<div class="price">${fmtZl(cost, 0)}</div><div class="row"><button class="btn pri" data-up="${u.id}" ${s.cash < cost ? 'disabled' : ''}>Ulepsz</button></div>`;
-        html += `</div>`;
+        html += `<div class="item"><div class="info"><div class="top"><b>${esc(u.name)}</b>${max ? '' : `<span class="price">${fmtZl(cost)}</span>`}</div><div class="desc">${esc(u.desc)}</div><div class="own">teraz: ${esc(u.fmt(u.vals[l]))}${max ? '' : ` → ${esc(u.fmt(u.vals[l + 1]))}`}</div>`;
+        html += max ? `<div class="lv">maksymalny poziom</div>` : `<div class="row"><button class="btn pri" data-up="${u.id}" ${s.cash < cost ? 'disabled' : ''}>Ulepsz</button></div>`;
+        html += `</div></div>`;
       }
     } else {
       for (const d of BLOCKS.filter((x) => x.cat === this.shopCat)) {
         const locked = d.lvl > lvl;
-        html += `<div class="item ${locked ? 'lock' : ''}"><img src="${this.g.icons.block(d.id)}" alt=""><b>${esc(d.name)}</b><div class="desc">${esc(d.desc || describe(d))}</div><div class="price">${fmtZl(d.cost)}</div><div class="own">w magazynie: ${s.wh[d.id] || 0}</div>`;
+        html += `<div class="item ${locked ? 'lock' : ''}"><img src="${this.g.icons.block(d.id)}" alt=""><div class="info"><div class="top"><b>${esc(d.name)}</b><span class="price">${fmtZl(d.cost)}</span></div><div class="desc">${esc(d.desc || describe(d))}</div><div class="own">w magazynie: ${s.wh[d.id] || 0}</div>`;
         if (locked) html += `<div class="lv">zablokowane · od poziomu ${d.lvl}</div>`;
         else html += `<div class="row">${[1, 5, 20].map((n) => `<button class="btn ${n === 1 ? 'pri' : ''}" data-buy="${d.id}" data-n="${n}" ${s.cash < d.cost * n ? 'disabled' : ''}>×${n}</button>`).join('')}</div>`;
-        html += `</div>`;
+        html += `</div></div>`;
       }
     }
     $('shop-grid').innerHTML = html;
