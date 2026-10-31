@@ -1,0 +1,23 @@
+// Rybna Wyspa: grab a clean in-game background and block icons for the HUD variant board.
+import { createRequire } from 'node:module';
+import fs from 'node:fs';
+const require = createRequire('/Users/jurek/openclaw/node_modules/');
+const { chromium } = require('playwright-core');
+const OUT = '/Users/jurek/Downloads/Claude/Projects/Rybna Wyspa/Niepotrzebne/hud';
+const line = fs.readFileSync('/Users/jurek/Downloads/Claude/Projects/Rybna Wyspa/Niepotrzebne/tools/line.js', 'utf8');
+const browser = await chromium.launch({ executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: true, args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] });
+const page = await browser.newPage({ viewport: { width: 1600, height: 900 }, deviceScaleFactor: 1 });
+await page.goto('http://localhost:8740/?auto=solo&nolock&debug&phase=0.2&weather=clear', { waitUntil: 'load' });
+await page.waitForFunction(() => window.__rw && window.__rw.playing, null, { timeout: 60000 });
+await page.evaluate(line);
+await page.waitForTimeout(7000);
+await page.evaluate(() => { const g = __rw; clearInterval(window.__pumpT); g.hud.show(false); g.player.teleport(-3.2, 1.65, 6.5); g.player.yaw = -0.95; g.player.pitch = -0.32; g.selSlot = 0; });
+await page.waitForTimeout(900);
+await page.screenshot({ path: OUT + '/bg.png' });
+const ids = ['pompa', 'tasma', 'zakret_l', 'rynna', 'lej', 'lod', 'myjnia', 'siec'];
+const urls = await page.evaluate((ids) => ids.map((id) => __rw.icons.block(id)), ids);
+ids.forEach((id, i) => fs.writeFileSync(`${OUT}/icons/${id}.png`, Buffer.from(urls[i].split(',')[1], 'base64')));
+const fishUrl = await page.evaluate(() => __rw.icons.fish(20));
+fs.writeFileSync(`${OUT}/icons/fish.png`, Buffer.from(fishUrl.split(',')[1], 'base64'));
+await browser.close();
+console.log('ok');

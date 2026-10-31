@@ -1,0 +1,30 @@
+{
+  "cherry_blossom": {
+    "file": "cherry_blossom.mp3",
+    "dur": 122.0,
+    "loop": true,
+    "gain": 0.7,
+    "mood": "day"
+  },
+  "stoic_morning": {
+    "file": "stoic_morning.mp3",
+    "dur": 139.5,
+    "loop": true,
+    "gain": 0.7,
+    "mood": "day"
+  },
+  "avec_soin": {
+    "file": "avec_soin.mp3",
+    "dur": 130.0,
+    "loop": true,
+    "gain": 0.65,
+    "mood": "night"
+  },
+  "midnight_tale": {
+    "file": "midnight_tale.mp3",
+    "dur": 147.2,
+    "loop": true,
+    "gain": 0.7,
+    "mood": "any"
+  }
+}

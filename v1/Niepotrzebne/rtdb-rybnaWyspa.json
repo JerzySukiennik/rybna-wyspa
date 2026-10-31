@@ -1,0 +1,16 @@
+{
+  ".read": "auth != null",
+  ".write": "auth != null",
+  "farms": {
+    "$fid": {
+      ".validate": "$fid.matches(/^[A-Za-z0-9]{3,12}$/)",
+      "fish": { ".validate": "newData.isString() && newData.val().length < 250000" },
+      "cash": { ".validate": "newData.isNumber()" },
+      "earned": { ".validate": "newData.isNumber()" },
+      "log": { "$id": { ".validate": "newData.hasChildren(['a', 'at'])" } }
+    }
+  },
+  "dir": {
+    "$fid": { ".validate": "$fid.matches(/^[A-Za-z0-9]{3,12}$/)" }
+  }
+}

@@ -1,0 +1,82 @@
+// Rybna Wyspa: fish variants (spawn-only, multiply the whole price) and traits (add (m - 1) x base each).
+
+export const VARIANTS = [
+  { id: 'none', name: '', m: 1, chance: 0 },
+  { id: 'srebrna', name: 'Srebrna', m: 2, chance: 0.03, color: '#dfe7ee' },
+  { id: 'zlota', name: 'Złota', m: 5, chance: 0.008, color: '#ffc93c' },
+  { id: 'teczowa', name: 'Tęczowa', m: 15, chance: 0.0012, color: '#ff7be8' },
+];
+
+const T = (id, name, m, o = {}) => ({
+  id, name, m,
+  grp: o.grp || null,
+  spawn: o.spawn || 0,
+  night: !!o.night,
+  tint: o.tint || null, tintK: o.tintK ?? (o.tint ? 0.75 : 0),
+  emi: o.emi || null, emiK: o.emiK ?? (o.emi ? 0.6 : 0),
+  pat: o.pat || 0,
+  acc: o.acc || null,
+  fx: o.fx || null,
+  scale: o.scale || 1, fat: o.fat || 1,
+  slip: o.slip || 0, flop: o.flop ?? 1, decay: o.decay ?? 1,
+  desc: o.desc || '',
+});
+
+export const PAT = { none: 0, stripes: 1, spots: 2, pixel: 3, crystal: 4, ghost: 5, disco: 6, galaxy: 7, lava: 8, grill: 9, candy: 10, salt: 11, frost: 12, stone: 13, aurora: 14 };
+
+export const TRAITS = [
+  T('mini', 'Mini', 1, { grp: 'size', spawn: 0.05, scale: 0.7, desc: 'Malutka, waży jedną trzecią.' }),
+  T('gigant', 'Gigant', 1, { grp: 'size', spawn: 0.035, scale: 1.45, desc: 'Trzy razy cięższa, więc trzy razy droższa.' }),
+  T('kolos', 'Kolos', 1, { grp: 'size', spawn: 0.004, scale: 1.9, desc: 'Prawie siedem razy cięższa.' }),
+  T('tlusta', 'Tłusta', 1.3, { grp: 'body', spawn: 0.04, fat: 1.28 }),
+  T('chuda', 'Chuda', 0.85, { grp: 'body', spawn: 0.04, fat: 0.8 }),
+  T('albinos', 'Albinos', 3, { grp: 'color', spawn: 0.004, tint: '#fbf3ee', tintK: 0.92 }),
+  T('cien', 'Cień', 3, { grp: 'color', spawn: 0.004, tint: '#15121c', tintK: 0.9, emi: '#4d2b7a', emiK: 0.2 }),
+  T('pastelowa', 'Pastelowa', 1.5, { grp: 'color', spawn: 0.012, tint: '#f6c9e4', tintK: 0.55 }),
+  T('neonowa', 'Neonowa', 2.5, { grp: 'color', spawn: 0.002, tint: '#38ff9c', tintK: 0.6, emi: '#38ff9c', emiK: 0.55 }),
+  T('czekoladowa', 'Czekoladowa', 2, { grp: 'color', tint: '#5a3220', tintK: 0.9 }),
+  T('cukierkowa', 'Cukierkowa', 2.2, { grp: 'color', tint: '#ff9fd0', tintK: 0.7, pat: PAT.candy }),
+  T('lawowa', 'Lawowa', 5, { grp: 'color', tint: '#2a1c18', tintK: 0.9, emi: '#ff6a00', emiK: 1, pat: PAT.lava, fx: 'ember' }),
+  T('krysztalowa', 'Kryształowa', 5, { grp: 'color', tint: '#9fe6ff', tintK: 0.7, emi: '#7fd9ff', emiK: 0.35, pat: PAT.crystal, fx: 'sparkle' }),
+  T('diamentowa', 'Diamentowa', 8, { grp: 'color', tint: '#f2fbff', tintK: 0.85, emi: '#bff3ff', emiK: 0.45, pat: PAT.crystal, fx: 'sparkle' }),
+  T('toksyczna', 'Toksyczna', 2.5, { grp: 'color', tint: '#9be22b', tintK: 0.65, emi: '#7dff2b', emiK: 0.25, fx: 'bubbles' }),
+  T('pikselowa', 'Pikselowa', 3, { grp: 'color', pat: PAT.pixel }),
+  T('robo', 'Robotyczna', 4, { grp: 'color', tint: '#9aa3ad', tintK: 0.85, emi: '#46e0ff', emiK: 0.15 }),
+  T('pasiasta', 'Pasiasta', 1.4, { grp: 'pattern', spawn: 0.03, pat: PAT.stripes }),
+  T('cetkowana', 'Cętkowana', 1.4, { grp: 'pattern', spawn: 0.03, pat: PAT.spots }),
+  T('galaktyczna', 'Galaktyczna', 6, { grp: 'pattern', pat: PAT.galaxy, emi: '#9b6bff', emiK: 0.4, fx: 'stars' }),
+  T('mokra', 'Mokra', 1.5, { desc: 'Z deszczu. Lśni od wody.', fx: 'drips' }),
+  T('elektryczna', 'Elektryczna', 3, { emi: '#7fd8ff', emiK: 0.45, fx: 'zap', desc: 'Z burzy albo transformatora.' }),
+  T('oszroniona', 'Oszroniona', 2, { pat: PAT.frost, desc: 'Złapała mróz.' }),
+  T('ksiezycowa', 'Księżycowa', 3, { emi: '#a9c8ff', emiK: 0.35, night: true, desc: 'Z pełni księżyca.' }),
+  T('kosmiczna', 'Kosmiczna', 6, { emi: '#c77dff', emiK: 0.5, fx: 'stars', desc: 'Z deszczu meteorów.' }),
+  T('widmowa', 'Widmowa', 4, { pat: PAT.ghost, emi: '#d8f2ff', emiK: 0.25, desc: 'Z mgły nad Narwią. Półprzezroczysta.' }),
+  T('wietrzna', 'Wietrzna', 1.8, { fx: 'wind', desc: 'Z wichury.' }),
+  T('sloneczna', 'Słoneczna', 1.5, { tint: '#ffd36b', tintK: 0.25, fx: 'glint', desc: 'Z upału.' }),
+  T('sniezna', 'Śnieżna', 2, { pat: PAT.salt, fx: 'snow', desc: 'Ze śnieżycy.' }),
+  T('zorzowa', 'Zorzowa', 8, { pat: PAT.aurora, emi: '#6dffb5', emiK: 0.6, desc: 'Z zorzy polarnej.' }),
+  T('krwawa', 'Krwawy Księżyc', 5, { tint: '#7a1020', tintK: 0.55, emi: '#ff3048', emiK: 0.25, night: true, desc: 'Z krwawego księżyca.' }),
+  T('zamrozona', 'Zamrożona', 2.5, { acc: 'icecube', slip: 0.95, flop: 0, decay: 0, desc: 'W bloku lodu. Nigdy się nie psuje.' }),
+  T('wedzona', 'Wędzona', 2, { tint: '#b4772e', tintK: 0.6, fx: 'smoke' }),
+  T('solona', 'Solona', 1.4, { pat: PAT.salt }),
+  T('radioaktywna', 'Radioaktywna', 4, { tint: '#c4ff4d', tintK: 0.3, emi: '#8dff2a', emiK: 0.85, fx: 'motes' }),
+  T('blyszczaca', 'Błyszcząca', 2, { fx: 'sparkle' }),
+  T('plonaca', 'Płonąca', 3.5, { emi: '#ff8a1e', emiK: 0.6, fx: 'fire' }),
+  T('magnetyczna', 'Magnetyczna', 2, { emi: '#ff4fd8', emiK: 0.15, fx: 'field' }),
+  T('plazmowa', 'Plazmowa', 7, { tint: '#e07bff', tintK: 0.45, emi: '#ff6bf1', emiK: 0.8, fx: 'zap' }),
+  T('disco', 'Disco', 4, { pat: PAT.disco, emi: '#ffffff', emiK: 0.3 }),
+  T('ice', 'ICE', 1.3, { pat: PAT.frost, desc: 'Z lodu. Po zdjęciu przez chwilę się nie psuje.' }),
+  T('grillowana', 'Grillowana', 2.2, { pat: PAT.grill, tint: '#c98a4a', tintK: 0.35, fx: 'smoke' }),
+  T('szczesliwa', 'Szczęśliwa', 2, { spawn: 0.01, fx: 'clover' }),
+  T('krolewska', 'Królewska', 4, { spawn: 0.003, acc: 'crown' }),
+  T('piracka', 'Piracka', 3, { spawn: 0.004, acc: 'pirate' }),
+  T('starozytna', 'Starożytna', 6, { spawn: 0.0015, pat: PAT.stone, tint: '#9c8f7d', tintK: 0.6 }),
+  T('zombie', 'Zombie', 3, { spawn: 0.003, night: true, tint: '#7f9a72', tintK: 0.6, flop: 1.8, desc: 'Nigdy nie przestaje się rzucać.' }),
+  T('skoczna', 'Skoczna', 1.3, { spawn: 0.03, flop: 1.9 }),
+  T('leniwa', 'Leniwa', 1.2, { spawn: 0.03, flop: 0 }),
+  T('narwianska', 'Narwiańska', 2, { spawn: 0.02, emi: '#5fe0d0', emiK: 0.12 }),
+  T('gzowska', 'Gzowska', 7, { spawn: 0.0005, emi: '#ffb02e', emiK: 0.35, fx: 'ember', desc: 'Najprawdziwsza ryba z Gzowa.' }),
+];
+
+export const TRAIT_BY_ID = Object.fromEntries(TRAITS.map((t, i) => [t.id, Object.assign(t, { idx: i })]));
+export const SPAWN_TRAITS = TRAITS.filter((t) => t.spawn > 0);
