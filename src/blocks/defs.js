@@ -5,8 +5,8 @@ import { Geo } from '../render/geo.js';
 import { BLOCKS, BLOCK_BY_ID } from '../data/blocks.js';
 
 export const BELT_TOP = 0.55;
-export const FLUME_FLOOR = 0.42;
-export const FLUME_WATER = 0.72;
+export const FLUME_WATER = BELT_TOP + 0.15;
+export const FLUME_FLOOR = FLUME_WATER - 0.3;
 export const CURVE_R = 1;
 const CC = 0.75;
 
@@ -800,7 +800,7 @@ export function blockPhysics(id) {
 
 export function blockPorts(def) {
   const [, , l] = def.dim;
-  const y = def.kind === 'flume' ? FLUME_FLOOR : BELT_TOP;
+  const y = BELT_TOP;
   if (def.kind === 'belt' || def.kind === 'machine' || def.kind === 'flume') {
     if (def.curve) {
       const e0 = curvePoint(def.curve, 0, CURVE_R), e1 = curvePoint(def.curve, -Math.PI / 2, CURVE_R);

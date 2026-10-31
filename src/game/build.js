@@ -14,7 +14,7 @@ const STEP_YAW = Math.PI / 12;
 const STEP_TILT = (5 * Math.PI) / 180;
 
 function family(def) {
-  return def.kind === 'flume' ? 'water' : 'dry';
+  return ['belt', 'flume', 'machine', 'slide'].includes(def.kind) ? 'line' : def.kind;
 }
 
 export function newBlockId() {
