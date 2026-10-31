@@ -22,9 +22,9 @@ void main() {
   vec3 view = normalize(cameraPosition - p);
   vec3 side = normalize(cross(uDir, view));
   float len = aOff.w;
-  vec3 wp = p + side * position.x * 0.03 - uDir * position.y * len;
+  vec3 wp = p + side * position.x * 0.02 - uDir * position.y * len;
   float d = distance(wp, cameraPosition);
-  vA = smoothstep(0.6, 2.0, d) * (1.0 - smoothstep(14.0, 26.0, d));
+  vA = smoothstep(1.2, 3.0, d) * (1.0 - smoothstep(14.0, 26.0, d));
   vT = position.y;
   gl_Position = projectionMatrix * viewMatrix * vec4(wp, 1.0);
 }`;
@@ -35,7 +35,7 @@ uniform vec3 uCol;
 varying float vA;
 varying float vT;
 void main() {
-  gl_FragColor = vec4(uCol, 0.55 * uK * vA * (1.0 - vT * 0.65));
+  gl_FragColor = vec4(uCol, 0.42 * uK * vA * (1.0 - vT * 0.65));
 }`;
 
 export class WeatherFx {
@@ -52,7 +52,7 @@ export class WeatherFx {
     const slant = Math.tan((12 * Math.PI) / 180);
     this.rainMat = new THREE.ShaderMaterial({
       uniforms: { uT: { value: 0 }, uCam: { value: new THREE.Vector3() }, uK: { value: 0 }, uSpeed: { value: 14 }, uDir: { value: new THREE.Vector3(slant * 0.8, -1, slant * 0.6).normalize() }, uCol: { value: new THREE.Color('#c6ced6') } },
-      vertexShader: RAIN_V, fragmentShader: RAIN_F, transparent: true, depthWrite: false,
+      vertexShader: RAIN_V, fragmentShader: RAIN_F, transparent: true, depthWrite: false, side: THREE.DoubleSide,
     });
     this.rain = new THREE.Mesh(quad, this.rainMat);
     this.rain.frustumCulled = false;

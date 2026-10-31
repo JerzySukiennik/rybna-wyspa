@@ -254,7 +254,7 @@ export class Sky {
       p.set(Math.cos(a) * c.d, c.y - grey * 40, Math.sin(a) * c.d);
       q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), c.rot + a);
       const g = 1 + grey * 0.9;
-      const fade = Math.max(0.001, (1 - grey * 1.25) * clamp(dayK * 1.6 - 0.1, 0, 1));
+      const fade = Math.max(0.001, (1 - grey * 1.25) * (1 - clamp(w.fog * 1.5, 0, 1)) * clamp(dayK * 1.6 - 0.1, 0, 1));
       s.set(c.sc * g * 1.25 * fade, c.sc * (0.65 + grey * 0.3) * fade, c.sc * g * fade);
       cm.setMatrixAt(i, m.compose(p, q, s));
     }

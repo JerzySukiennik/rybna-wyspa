@@ -7,7 +7,7 @@ The game: a first-person co-op fish-farm tycoon in the browser (three.js). Playe
 Judge only what you see in the images. Do not look for or use outside reference images. Use your own knowledge of what shipped, polished games on Steam look like.
 
 Images (all are real captures of the current build):
-- Game captures: `Niepotrzebne/gauntlet/pack/a.png` to `g.png` (1600x900; menu aerial, first-person play with HUD, a fish under the cursor with its ID card, a held stack of fish, the shop screen, rain in the afternoon, a full-moon night).
+- Game captures: `Niepotrzebne/gauntlet/pack/a.png` to `g.png` (1600x900; menu aerial of a farm in progress, first-person play with HUD, a fish under the cursor with its ID card, a held stack of fish, the shop screen, rain, morning fog over the river).
 - Model sheets: `Niepotrzebne/models/shots/fish1.png`, `fish2.png`, `avatar.png`, `deco.png` (procedural models on a neutral background).
 
 Answer in Polish. Write the report to `Niepotrzebne/gauntlet/round{N}.md` (N is given in your task) with exactly these sections:
