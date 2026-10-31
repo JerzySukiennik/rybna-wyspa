@@ -1,0 +1,20 @@
+// Rybna Wyspa: smoke test of the live build (boot, solo play, server connection from the public domain).
+import { createRequire } from 'node:module';
+const require = createRequire('/Users/jurek/openclaw/node_modules/');
+const { chromium } = require('playwright-core');
+const base = process.argv[2] || 'https://rybna-wyspa.gzowo.fun/';
+const browser = await chromium.launch({ executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: true, args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] });
+const errs = [];
+const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+page.on('pageerror', (e) => errs.push(e.message));
+page.on('console', (m) => { if (m.type() === 'error') errs.push(m.text()); });
+await page.goto(base, { waitUntil: 'load' });
+await page.waitForFunction(() => document.getElementById('menu') && !document.getElementById('menu').classList.contains('hidden'), null, { timeout: 60000 });
+await page.waitForTimeout(6000);
+const net = await page.evaluate(() => document.getElementById('net-status').textContent);
+await page.goto(base + '?auto=solo&nolock', { waitUntil: 'load' });
+await page.waitForFunction(() => window.__rw && window.__rw.playing, null, { timeout: 60000 });
+await page.waitForTimeout(2500);
+const solo = await page.evaluate(() => ({ playing: __rw.playing, fps: Math.round(__rw.fps), blocks: __rw.blocks.blocks.size, smaz: !!__rw.smaz }));
+console.log(JSON.stringify({ net, solo, errors: errs.filter((e) => !e.includes('pointer lock')).slice(0, 5) }));
+await browser.close();
