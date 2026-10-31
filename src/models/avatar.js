@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { Soup, tube, blob, hexa, ridge, C, shade, mixC, hh } from './soup.js';
 
 const MAT = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
-const SKIN = C('#e8b48e'), SKIN_D = C('#d39c78'), BOOT = C('#2d4a2b'), SOLE = C('#1b2619'), PANTS = C('#7a7348'), PANTS_D = C('#686238');
+const SKIN = C('#e8b48e'), SKIN_D = C('#d39c78'), BOOT = C('#2d4a2b'), SOLE = C('#1b2619'), PANTS = C('#8c8452'), PANTS_D = C('#7a7244');
 const SHIRT = C('#7d8fa8'), SHIRT_D = C('#6a7b94'), BELT = C('#3a2c20'), DARK = C('#2a2220');
 
 function mesh(S, name) {
@@ -93,7 +93,7 @@ function buildHead(cap) {
 }
 
 function hand(S, x0, y0, z0, sx, palmDown = false) {
-  const w = 0.04, t = 0.016, L = 0.085;
+  const w = 0.048, t = 0.02, L = 0.1;
   const c = palmDown ? SKIN : SKIN_D;
   hexa(S, [[x0 - t, y0, z0 - w], [x0 + t, y0, z0 - w], [x0 + t, y0, z0 + w], [x0 - t, y0, z0 + w], [x0 - t * 0.8, y0 - L, z0 - w * 0.9], [x0 + t * 0.8, y0 - L, z0 - w * 0.9], [x0 + t * 0.8, y0 - L, z0 + w * 0.85], [x0 - t * 0.8, y0 - L, z0 + w * 0.85]], (f) => (f === 3 || f === 5 ? c : SKIN));
   hexa(S, [[x0 - 0.01, y0 - 0.02, z0 - w], [x0 + 0.01, y0 - 0.02, z0 - w], [x0 + 0.01, y0 - 0.02, z0 - w - 0.012], [x0 - 0.01, y0 - 0.02, z0 - w - 0.012], [x0 - sx * 0.006 - 0.008, y0 - 0.07, z0 - w - 0.02], [x0 - sx * 0.006 + 0.008, y0 - 0.07, z0 - w - 0.02], [x0 - sx * 0.006 + 0.008, y0 - 0.07, z0 - w - 0.034], [x0 - sx * 0.006 - 0.008, y0 - 0.07, z0 - w - 0.034]], SKIN);
@@ -137,10 +137,10 @@ export function buildViewHands() {
   root.name = 'viewHands';
   for (const sx of [-1, 1]) {
     const S = new Soup();
-    const wrist = [sx * 0.13, -0.32, -0.36], elbow = [sx * 0.24, -0.46, -0.02];
-    tube(S, [elbow, [sx * 0.2, -0.41, -0.16], wrist], [0.05, 0.047, 0.042], 8, (i, j) => (j & 1 ? SHIRT : shade(SHIRT, 0.94)), 0, 0, { capStart: true });
-    tube(S, [[sx * 0.135, -0.322, -0.345], [sx * 0.127, -0.317, -0.38]], [0.046, 0.046], 8, SHIRT_D, 0, 0, { capStart: true, capEnd: true });
-    const px = sx * 0.125, py = -0.318, pz = -0.38;
+    const wrist = [sx * 0.13, -0.262, -0.41], elbow = [sx * 0.25, -0.43, -0.05];
+    tube(S, [elbow, [sx * 0.2, -0.36, -0.22], wrist], [0.05, 0.047, 0.042], 8, (i, j) => (j & 1 ? SHIRT : shade(SHIRT, 0.94)), 0, 0, { capStart: true });
+    tube(S, [[sx * 0.134, -0.264, -0.395], [sx * 0.127, -0.258, -0.43]], [0.046, 0.046], 8, SHIRT_D, 0, 0, { capStart: true, capEnd: true });
+    const px = sx * 0.125, py = -0.256, pz = -0.43;
     const palm = mixC(SKIN, C('#f0c4a2'), 0.6);
     hexa(S, [[px - 0.042, py - 0.012, pz], [px + 0.042, py - 0.012, pz], [px + 0.044, py - 0.012, pz - 0.085], [px - 0.044, py - 0.012, pz - 0.085], [px - 0.042, py + 0.008, pz], [px + 0.042, py + 0.008, pz], [px + 0.044, py + 0.008, pz - 0.085], [px - 0.044, py + 0.008, pz - 0.085]], (f) => (f === 1 ? palm : SKIN_D));
     for (let i = 0; i < 4; i++) {

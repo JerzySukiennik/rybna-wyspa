@@ -41,6 +41,9 @@ kbd { font-family: var(--type); font-weight: 700; font-size: 0.82em; background:
 #lic .stamp { right: -26px; bottom: -34px; }
 #online-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #8a98a6; margin-right: 5px; vertical-align: 1px; }
 #online-dot.on { background: var(--teal); }
+#tip { position: absolute; left: 22px; top: 178px; width: 270px; padding: 9px 13px 10px; transform: rotate(0.8deg); font-size: 13px; }
+#tip .h { font-family: var(--head); font-weight: 600; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--teal); margin-bottom: 3px; }
+#tip kbd { font-size: 11px; }
 #weather { position: absolute; left: 50%; top: 16px; transform: translateX(-50%) rotate(0.5deg); padding: 7px 16px 8px; text-align: center; min-width: 190px; }
 #weather .t { font-family: var(--head); font-weight: 600; font-size: 17px; letter-spacing: 1px; text-transform: uppercase; display: flex; gap: 8px; align-items: center; justify-content: center; }
 #weather .t svg { width: 20px; height: 20px; }

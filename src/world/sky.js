@@ -199,7 +199,8 @@ export class Sky {
     if (id === 'krwawy') { tgt.blood = 1; tgt.moon = 1; }
     if (id === 'pelnia') { tgt.moon = 1; }
     if (id === 'zorza') { tgt.aurora = 1; }
-    for (const key in tgt) w[key] = lerp(w[key] ?? 0, tgt[key], k);
+    const kk = Math.min(1, Math.max(0, k));
+    for (const key in tgt) w[key] = lerp(w[key] ?? 0, tgt[key], kk);
   }
 
   update(phase, dt, t, camPos, flash = 0) {
@@ -243,9 +244,9 @@ export class Sky {
     L.dir.copy(useMoon ? moonDir : sunDir);
     L.sun.copy(pick('sun'));
     if (useMoon) L.sun.set(w.blood > 0.3 ? '#ff9a9a' : '#a8bcff');
-    L.sunI = useMoon ? 0.35 + w.moon * 0.35 : (0.5 + 2.6 * dayK) * (1 - w.grey * 0.6);
+    L.sunI = useMoon ? 0.22 + w.moon * 0.4 : (0.5 + 2.6 * dayK) * (1 - w.grey * 0.6);
     L.hemiSky.copy(pick('hemiSky'));
-    L.hemiI = (0.32 + 0.62 * dayK) * (1 - w.dark * 0.4) + w.moon * 0.12 * (1 - dayK) + flash * 2.5;
+    L.hemiI = (0.22 + 0.72 * dayK) * (1 - w.dark * 0.4) + w.moon * 0.14 * (1 - dayK) + flash * 2.5;
     L.horizon.copy(u.uHorizon.value);
     L.night = 1 - dayK;
     L.wave = 1 + (w.wave ?? 0);

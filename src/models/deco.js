@@ -1,5 +1,4 @@
 // Rybna Wyspa: low-poly decorations of the Narew bank (trees, reeds, rocks, lily, boat, pier) as vertex-coloured geometry.
-import * as THREE from 'three';
 import { Soup, tube, blob, hexa, C, shade, mixC, hh, norm, add, mul, sub } from './soup.js';
 
 export const DECO_IDS = ['willow', 'birch', 'alder', 'pine', 'bush', 'reeds', 'cattail', 'rock_s', 'rock_m', 'rock_l', 'grass', 'flowers', 'log', 'stump', 'lily', 'boat', 'pier'];
@@ -105,15 +104,15 @@ function pine() {
   tube(S, pts, [0.25, 0.2, 0.17, 0.145, 0.12, 0.09, 0.05], 7, (i, j) => (i < 2 ? pick(low, hh(i, j, 2)) : pick(high, hh(i, j, 3))).clone().multiplyScalar(0.95 + hh(j, i, 8) * 0.1), 0, 0);
   const brC = (i, j) => pick(high, hh(i, j, 6));
   const pal = [C('#3e5d3a'), C('#47693f'), C('#365234'), C('#4f7446')];
-  const arms = [[5.6, 0.3, 1.7, 0.25], [6.3, 2.5, 1.5, 0.35], [6.9, 4.4, 1.3, 0.3], [7.5, 1.4, 1.0, 0.45]];
-  arms.forEach(([y, a, l, up], n) => {
+  const arms = [[5.7, 0.3, 1.9, 0.22, 1.35], [6.4, 2.4, 1.8, 0.3, 1.3], [7.0, 4.3, 1.6, 0.28, 1.2], [7.5, 1.3, 1.3, 0.4, 1.05]];
+  arms.forEach(([y, a, l, up, sz], n) => {
     const d = norm([Math.cos(a), up, Math.sin(a)]);
     const p0 = [pts[4][0] * (y / 6.2), y, pts[4][2] * (y / 6.2)];
     const tip = add(p0, mul(d, l));
-    tube(S, [p0, add(p0, mul(d, l * 0.5)), tip], [0.08, 0.055, 0.03], 4, brC, 0, 0);
-    blob(S, add(tip, [0, 0.15, 0]), [0.95 - n * 0.08, 0.42, 0.85 - n * 0.06], 1, (m, w, i) => leafCol(pal, m, w, i, 20 + n, 0.3), { jitter: 0.2, seed: 20 + n });
+    tube(S, [p0, add(p0, mul(d, l * 0.5)), tip], [0.09, 0.065, 0.035], 4, brC, 0, 0);
+    blob(S, add(tip, [-d[0] * 0.3, 0.2, -d[2] * 0.3]), [1.25 * sz, 0.62 * sz, 1.1 * sz], 1, (m, w, i) => leafCol(pal, m, w, i, 20 + n, 0.32), { jitter: 0.2, seed: 20 + n });
   });
-  blob(S, [pts[6][0], 8.55, pts[6][2]], [0.95, 0.5, 0.9], 1, (m, w, i) => leafCol(pal, m, w, i, 30, 0.3), { jitter: 0.2, seed: 30 });
+  blob(S, [pts[6][0], 8.28, pts[6][2]], [1.35, 0.7, 1.25], 1, (m, w, i) => leafCol(pal, m, w, i, 30, 0.32), { jitter: 0.2, seed: 30 });
   return S;
 }
 
@@ -128,7 +127,7 @@ function bush() {
 function reeds() {
   const S = new Soup();
   const stem = C('#a7a462'), stemD = C('#8a8a4e'), leaf = C('#8fa456'), plume = [C('#7a5e4c'), C('#8a6a56'), C('#6c5444')];
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 6; i++) {
     const a = i * 2.4 + 0.3, r = 0.08 + 0.25 * hh(i, 1, 4);
     const base = [Math.cos(a) * r, 0, Math.sin(a) * r];
     const h = 1.7 + 0.7 * hh(i, 2, 4);
@@ -156,7 +155,7 @@ function cattail() {
     const top = add(base, [Math.cos(a) * 0.08, h, Math.sin(a) * 0.08]);
     tube(S, [base, top], [0.014, 0.011], 3, stem, 0, 0);
     const hb = add(top, [0, 0.02, 0]);
-    tube(S, [hb, add(hb, [0, 0.03, 0]), add(hb, [0, 0.21, 0]), add(hb, [0, 0.24, 0])], [0.028, 0.042, 0.04, 0.026], 6, head, 0, 0, { capStart: true, capEnd: true });
+    tube(S, [hb, add(hb, [0, 0.04, 0]), add(hb, [0, 0.24, 0])], [0.03, 0.043, 0.03], 5, head, 0, 0, { capStart: true, capEnd: true });
     tube(S, [add(hb, [0, 0.24, 0]), add(hb, [0, 0.4, 0])], [0.007, 0], 3, C('#9a8a5c'), 0, 0);
   }
   return S;
@@ -268,7 +267,7 @@ function stump() {
 function lily() {
   const S = new Soup();
   const pad = [C('#4f8a3a'), C('#5a9642'), C('#467e34')], under = C('#7a4a3a');
-  const n = 12, R = 0.36, notch = 0.32;
+  const n = 10, R = 0.36, notch = 0.34;
   const ctr = [0, 0.012, 0], ctrB = [0, -0.006, 0];
   const pt = (a, y, rr = R) => [Math.cos(a) * rr * (1 + 0.04 * Math.sin(a * 3)), y, Math.sin(a) * rr];
   for (let k = 0; k < n; k++) {
@@ -284,7 +283,7 @@ function lily() {
   }
   const fc = [-0.08, 0.012, 0.06];
   const white = C('#f6f3ec'), pink = C('#f2dce0'), yel = C('#f0c63a');
-  for (const [cnt, len, rise, rot, col] of [[8, 0.12, 0.05, 0, white], [6, 0.085, 0.085, 0.4, pink]]) {
+  for (const [cnt, len, rise, rot, col] of [[8, 0.12, 0.05, 0, white], [5, 0.085, 0.085, 0.4, pink]]) {
     for (let k = 0; k < cnt; k++) {
       const a = rot + (k / cnt) * Math.PI * 2;
       const d = [Math.cos(a), 0, Math.sin(a)], s = [-Math.sin(a), 0, Math.cos(a)];

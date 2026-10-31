@@ -15,7 +15,7 @@
   .cell { position: absolute; border-right: 1px solid rgba(35, 48, 58, 0.08); border-bottom: 1px solid rgba(35, 48, 58, 0.08); }
   .lab { position: absolute; left: 8px; top: 5px; white-space: nowrap; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7); }
   .lab b { font-weight: 650; }
-  .lab .r { font-weight: 600; margin-left: 6px; }
+  .lab .r { font-weight: 600; margin-left: 6px; padding: 0 5px; border-radius: 4px; background: #2b3640; text-shadow: none; }
   .lab .t { color: var(--sub); margin-left: 6px; font-variant-numeric: tabular-nums; }
   #title { position: absolute; left: 10px; top: 8px; font-weight: 700; font-size: 15px; pointer-events: none; }
   .tag { position: absolute; padding: 1px 6px; border-radius: 6px; background: rgba(255, 255, 255, 0.82); white-space: nowrap; font-size: 12px; transform: translate(-50%, -100%); }
@@ -167,7 +167,9 @@ function renderViews() {
     const ctr = box.getCenter(new THREE.Vector3());
     const span = box.getSize(new THREE.Vector3()).length() * 0.6 + 0.2;
     stage.sun.target.position.copy(ctr);
-    stage.sun.position.copy(ctr).add(new THREE.Vector3(span * 0.6, span * 1.4, span * 0.9));
+    const vd = v.dir.clone().normalize();
+    const lightDir = new THREE.Vector3(vd.x + 0.45, Math.max(vd.y, 0) + 1.3, vd.z + 0.25).normalize();
+    stage.sun.position.copy(ctr).addScaledVector(lightDir, span * 1.6);
     const sc = stage.sun.shadow.camera;
     sc.left = -span; sc.right = span; sc.top = span; sc.bottom = -span; sc.far = span * 6; sc.updateProjectionMatrix();
     stage.sun.shadow.normalBias = span * 0.003;
@@ -271,7 +273,7 @@ function avatarSheet() {
   gr.rotation.x = -Math.PI / 2; gr.position.y = -1.62; hs.add(gr);
   hs.add(hands);
   const stack = new THREE.Group();
-  ['ploc', 'okon', 'leszcz'].forEach((id, i) => { const f = new THREE.Mesh(fishGeometry(id), FISH_MAT); f.scale.setScalar(0.3); f.rotation.set(-Math.PI / 2, 0, (i - 1) * 0.15); f.position.set(0, -0.255 + i * 0.03, -0.44); stack.add(f); });
+  ['ploc', 'okon', 'leszcz'].forEach((id, i) => { const f = new THREE.Mesh(fishGeometry(id), FISH_MAT); f.scale.setScalar(0.3); f.rotation.set(-Math.PI / 2, 0, (i - 1) * 0.15); f.position.set(0, -0.2 + i * 0.03, -0.5); stack.add(f); });
   hs.add(stack);
   const fp = new THREE.PerspectiveCamera(70, 600 / h, 0.02, 100);
   views.push({ custom: true, rect: { x: 1000, y: t + h, w: 600, h }, draw(rect) { stack.visible = Q.get('stack') !== '0'; renderer.render(hs, fp); } });
@@ -315,7 +317,7 @@ function freeScene() {
   const { scene } = stage;
   scene.background = new THREE.Color('#cfe4f3');
   const cam = new THREE.PerspectiveCamera(45, W / Hh, 0.05, 500);
-  cam.position.set(6, 9, 22);
+  cam.position.set(2, 11, 24);
   const css = new CSS2DRenderer();
   css.setSize(W, Hh);
   Object.assign(css.domElement.style, { position: 'absolute', inset: '0', pointerEvents: 'none' });
@@ -323,21 +325,21 @@ function freeScene() {
   const tag = (obj, text, y) => { const d = document.createElement('div'); d.className = 'tag'; d.innerHTML = text; const o = new CSS2DObject(d); o.position.set(0, y, 0); obj.add(o); };
   FISH_IDS.forEach((id, i) => {
     const [lying, standing] = fishPair(id);
-    const x = (i % 17) * 1.25 - 10, z = Math.floor(i / 17) * 3.2 - 3;
+    const x = (i % 17) * 1.5 - 12, z = Math.floor(i / 17) * 4 + 1;
     lying.position.x = standing.position.x = x;
-    lying.position.z = z; standing.position.z = z + 1.3;
+    lying.position.z = z; standing.position.z = z + 1.6;
     scene.add(lying, standing);
     const s = SPECIES_BY_ID[id], r = rarityOf(id);
-    tag(lying, `${s ? s.name : id} <span style="color:${r.color}">${r.name}</span> ${fishGeometry(id).getAttribute('position').count / 3}`, 0.25);
+    tag(lying, `<span style="color:${r.color}">●</span> ${s ? s.name : id}`, 0.2);
   });
-  const av = shadowAll(buildAvatar(0xe8742c)); av.position.set(-13, 0, 6); scene.add(av);
-  const av2 = shadowAll(buildAvatar('#2f7fd8')); av2.position.set(-14.2, 0, 6);
+  const av = shadowAll(buildAvatar(0xe8742c)); av.position.set(-15, 0, 3); scene.add(av);
+  const av2 = shadowAll(buildAvatar('#2f7fd8')); av2.position.set(-16.2, 0, 3);
   scene.add(av2);
-  const hands = shadowAll(buildViewHands()); hands.position.set(-12, 1.6, 7.5); scene.add(hands);
+  const hands = shadowAll(buildViewHands()); hands.position.set(-15.5, 1.5, 5.5); scene.add(hands);
   DECO_IDS.forEach((id, i) => {
     const m = new THREE.Mesh(decoGeometry(id), PLAIN_MAT);
     m.castShadow = m.receiveShadow = true;
-    m.position.set((i % 9) * 5 - 20, id === 'lily' ? 0.02 : 0, -12 - Math.floor(i / 9) * 9);
+    m.position.set((i % 9) * 6 - 24, id === 'lily' ? 0.02 : 0, -6 - Math.floor(i / 9) * 10);
     scene.add(m);
     tag(m, id, 0.3);
   });
@@ -368,7 +370,11 @@ window.__check = () => FISH_IDS.map((id) => {
   let bmin = 9, bmax = -9, gmax = 0;
   for (let i = 0; i < n; i++) { bmin = Math.min(bmin, bend[i]); bmax = Math.max(bmax, bend[i]); gmax = Math.max(gmax, glow[i]); }
   const lim = ['jesiotr', 'sum', 'zloty_sum', 'potwor'].includes(id) ? 1000 : 700;
-  return { id, tris: n / 3, lim, len: +(b.max.x - b.min.x).toFixed(4), x0: +b.min.x.toFixed(4), cy: +((b.max.y + b.min.y) / 2).toFixed(4), cz: +((b.max.z + b.min.z) / 2).toFixed(4), h: d.h, w: d.w, attrs, indexed: !!g.index, bend: [+bmin.toFixed(3), +bmax.toFixed(3)], glow: +gmax.toFixed(2) };
+  const P = g.getAttribute('position').array, N = g.getAttribute('normal').array;
+  const inward = g.userData.inward;
+  void P; void N;
+  const bcy = +(((g.userData.body.min[1] + g.userData.body.max[1]) / 2)).toFixed(3);
+  return { id, tris: n / 3, lim, len: +(b.max.x - b.min.x).toFixed(4), x0: +b.min.x.toFixed(4), cy: +((b.max.y + b.min.y) / 2).toFixed(4), cz: +((b.max.z + b.min.z) / 2).toFixed(4), h: d.h, w: d.w, attrs, indexed: !!g.index, bend: [+bmin.toFixed(3), +bmax.toFixed(3)], glow: +gmax.toFixed(2), inward, bcy };
 });
 
 try {

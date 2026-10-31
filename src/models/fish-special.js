@@ -185,6 +185,8 @@ export function printedBody(ctx) {
   });
 }
 
+const EPS = 0.0006;
+
 function prismPoly(S, foot, y0, y1, col, kind) {
   const n = foot.length;
   const cx = foot.reduce((a, p) => a + p[0], 0) / n, cz = foot.reduce((a, p) => a + p[1], 0) / n, cy = (y0 + y1) / 2;
@@ -212,7 +214,7 @@ export function printedParts(ctx) {
       const y0 = yMin + k * lh, y1 = y0 + lh;
       const sl = sliceX(poly, (y0 + y1) / 2);
       if (!sl || sl[1] - sl[0] < 0.022) continue;
-      boxPrism(S, sl[0], sl[1], y0, y1, -T, T, shade(green, k % 2 ? 0.88 : 1), 1);
+      boxPrism(S, sl[0], sl[1], y0 + EPS, y1 + EPS, -T, T, shade(green, k % 2 ? 0.88 : 1), 1);
     }
   };
   const top = (u) => { const pr = prof(u); return pr.c + pr.ht; };
@@ -230,7 +232,7 @@ export function printedParts(ctx) {
     for (const side of [1, -1]) {
       const za = zAt(u0) - 0.012, zb = zAt(u1) - 0.012;
       const foot = [[X(u0), za], [X(u1), zb], [X(u1 + sweep), zb + out], [X(u0 + sweep * 1.4), za + out * 0.85]].map(([x, z]) => [x, z * side]);
-      prismPoly(S, side > 0 ? foot : foot.reverse(), y0, y1, shade(green, k % 2 ? 0.88 : 1), 1);
+      prismPoly(S, foot, y0 + EPS, y1 + EPS, shade(green, k % 2 ? 0.88 : 1), 1);
     }
   };
   slab(0.2, 0.27, prof(0.23).c - 0.25 * prof(0.23).hb, 0.06, 0.06);
@@ -298,13 +300,13 @@ export function monster(ctx) {
   const skin = C('#1e2c1b'), skin2 = C('#121a10'), inner = C('#4a1214');
   const hinge = 0.2, prH = prof(hinge);
   const hp = [prH.x, prH.c - prH.hb * 0.45, 0];
-  const open = 0.36, len = 0.2, n = 5;
+  const open = 0.33, len = 0.215, n = 5;
   const rings = [];
   for (let s = 0; s <= n; s++) {
     const f = s / n;
     const c = [hp[0] + Math.cos(open) * len * f, hp[1] - Math.sin(open) * len * f, 0];
     const hw = lerp(prH.w * 0.92, prH.w * 0.32, Math.pow(f, 1.2));
-    const dp = lerp(0.07, 0.03, f);
+    const dp = lerp(0.095, 0.05, f);
     const ring = [[c[0], c[1], hw], [c[0], c[1] - dp * 0.55, hw * 0.92], [c[0], c[1] - dp, hw * 0.42], [c[0], c[1] - dp, -hw * 0.42], [c[0], c[1] - dp * 0.55, -hw * 0.92], [c[0], c[1], -hw]];
     rings.push({ c, ring });
   }
@@ -337,8 +339,8 @@ export function monster(ctx) {
       if (from === 'jaw') {
         const R = rings[Math.round(u)].ring;
         const p = side > 0 ? R[1] : R[4];
-        at = { p, n: [0, -0.5, side * 0.8] };
-      } else at = ctx.surfAt(u, yn, side);
+        at = { p: add(p, [0, 0.004, -side * 0.008]), n: [0, -0.5, side * 0.8] };
+      } else { at = ctx.surfAt(u, yn, side); at = { p: madd(at.p, at.n, -0.005), n: at.n }; }
       let d = norm([dir[0], dir[1], dir[2] * side]);
       const pts = [at.p];
       const segs = 5;
@@ -352,13 +354,13 @@ export function monster(ctx) {
   tent(3, 0, [-0.2, -1, 0.35], [-1.2, 0.6, 0.4], 0.2, 'jaw');
   tent(5, 0, [0.1, -1, 0.15], [-0.9, 0.5, -0.5], 0.17, 'jaw');
   tent(0.17, -0.25, [-0.3, -0.6, 0.8], [-1.0, -0.2, -0.4], 0.16);
-  const plateC = C('#4a5638'), plateE = C('#2c3524');
-  const rows = [[0.27, 0.66, 0.28, 4], [0.33, 0.62, -0.28, 3]];
+  const plateC = C('#5a6646'), plateE = C('#26301f');
+  const rows = [[0.25, 0.7, 0.1, 6]];
   for (const [u0, u1, yn, cnt] of rows) {
     for (const side of [1, -1]) {
       for (let i = 0; i < cnt; i++) {
         const at = ctx.surfAt(lerp(u0, u1, i / Math.max(1, cnt - 1)), yn, side);
-        dome(S, ctx.caster, at.p, at.n, 0.034, { seg: 4, rot: Math.PI / 4, stretch: 1.25, rings: [[1, -0.1], [0.62, 0.16]], apex: 0.2, cols: [plateE, plateC], kind: 5 });
+        dome(S, ctx.caster, at.p, at.n, 0.05, { seg: 4, rot: 0, stretch: 1.75, rings: [[1, -0.1], [0.55, 0.2]], apex: 0.34, cols: [plateE, plateC], kind: 5 });
       }
     }
   }

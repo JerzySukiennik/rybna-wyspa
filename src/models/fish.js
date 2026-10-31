@@ -1,5 +1,4 @@
 // Rybna Wyspa: procedural low-poly fish (34 Narew species) built from a parametric body loft, fins, eyes and barbels.
-import * as THREE from 'three';
 import { Soup, Caster, finStrip, ridge, dome, tube, C, mixC, shade, clamp, lerp, smooth, hh, vnoise, add, sub, mul, madd, dot, cross, norm, vlerp, basis } from './soup.js';
 import { SPECS } from './fish-species.js';
 
@@ -448,7 +447,7 @@ function spotsRaised(ctx) {
       const yn = lerp(R.y0, R.y1, hh(i, 43 + side, R.seed));
       const at = ctx.surfAt(u, yn, side);
       const r = R.r * (0.8 + 0.4 * hh(i, 47, R.seed));
-      dome(ctx.S, ctx.caster, at.p, at.n, r, { seg: R.seg || 5, rings: [[1, -0.15], [0.56, 0.12]], apex: 0.15, cols: [H(R.ring), H(R.col)], kind: 5 });
+      dome(ctx.S, ctx.caster, at.p, at.n, r, { seg: R.seg || 5, rings: [[1, -0.15], [R.inner ?? 0.56, 0.12]], apex: 0.15, cols: [H(R.ring), H(R.col)], kind: 5 });
     }
   }
 }
@@ -579,15 +578,25 @@ function build(id) {
   }
   if (sp.special) sp.special(ctx);
   const S = ctx.S;
+  let inward = 0;
+  for (let t = 0; t < S.k.length; t++) {
+    if (S.k[t] !== 0) continue;
+    const p = S.p, o = t * 9;
+    const a = [p[o], p[o + 1], p[o + 2]], b = [p[o + 3], p[o + 4], p[o + 5]], c = [p[o + 6], p[o + 7], p[o + 8]];
+    const m = centroid3(a, b, c), n = cross(sub(b, a), sub(c, a));
+    const ax = [m[0], ctx.prof(clamp(0.5 - m[0], 0, sp.L)).c, 0];
+    const r = sub(m, ax);
+    if (Math.hypot(r[1], r[2]) > 0.004 && dot(n, [0, r[1], r[2]]) < 0 && Math.abs(n[0]) < 0.9 * Math.hypot(n[0], n[1], n[2])) inward++;
+  }
   const bb = S.bounds();
   const s = 1 / (bb.max[0] - bb.min[0]);
   const cx = (bb.max[0] + bb.min[0]) / 2, cy = (bb.max[1] + bb.min[1]) / 2, cz = (bb.max[2] + bb.min[2]) / 2;
   S.map((p) => [(p[0] - cx) * s, (p[1] - cy) * s, (p[2] - cz) * s]);
   const body = S.bounds(0);
-  const dims = { h: +(body.max[1] - body.min[1]).toFixed(4), w: +(body.max[2] - body.min[2]).toFixed(4) };
+  const dims = { h: +(body.max[1] - body.min[1]).toFixed(4), w: +(body.max[2] - body.min[2]).toFixed(4), cy: +((body.max[1] + body.min[1]) / 2).toFixed(4) };
   const geo = S.geometry((x) => clamp(0.5 - x, 0, 1));
   geo.name = 'fish_' + id;
-  geo.userData = { id, dims };
+  geo.userData = { id, dims, body: { min: body.min, max: body.max }, inward };
   return { geo, dims };
 }
 
@@ -603,5 +612,5 @@ export function fishGeometry(id) {
 
 export function fishDims(id) {
   const d = get(id).dims;
-  return { h: d.h, w: d.w };
+  return { h: d.h, w: d.w, cy: d.cy };
 }

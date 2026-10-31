@@ -132,7 +132,7 @@ export class Farm {
     return f;
   }
 
-  dump(pid, origin, dir) {
+  dump(pid, origin, dir, target) {
     const s = this.stacks.get(pid);
     if (!s || !s.length) return 0;
     let n = 0;
@@ -141,7 +141,13 @@ export class Farm {
       const rec = s.pop();
       const k = n++;
       const pos = origin.clone().addScaledVector(right, ((k % 3) - 1) * 0.25).add(new THREE.Vector3(0, Math.floor(k / 3) * 0.12, 0));
-      const vel = dir.clone().multiplyScalar(2.2 + this.rand() * 0.8).add(new THREE.Vector3((this.rand() - 0.5) * 0.6, 1.6 + this.rand(), (this.rand() - 0.5) * 0.6));
+      let vel;
+      if (target) {
+        const aim = new THREE.Vector3(target.x + (this.rand() - 0.5) * 0.7, target.y, target.z + (this.rand() - 0.5) * 0.7);
+        const d = aim.clone().sub(pos);
+        const T = 0.55 + Math.hypot(d.x, d.z) * 0.07 + k * 0.02;
+        vel = new THREE.Vector3(d.x / T, d.y / T + 0.5 * 12 * T, d.z / T);
+      } else vel = dir.clone().multiplyScalar(2.2 + this.rand() * 0.8).add(new THREE.Vector3((this.rand() - 0.5) * 0.6, 1.6 + this.rand(), (this.rand() - 0.5) * 0.6));
       const f = this.sim.spawn(rec, pos, vel, null, { x: (this.rand() - 0.5) * 5, y: 0, z: (this.rand() - 0.5) * 5 });
       if (f) f.by = pid;
     }

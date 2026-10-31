@@ -97,7 +97,7 @@ export class WeatherFx {
     this.snowMat.uniforms.uCam.value.copy(cam);
     this.bowMat.opacity = this.k.bow * 0.42;
     this.bow.visible = this.k.bow > 0.01;
-    this.flash = Math.max(0, this.flash - dt * 4);
+    this.flash = Math.min(1, Math.max(0, this.flash - Math.max(0, dt) * 4));
     if (id === 'burza') {
       this.nextBolt -= dt;
       if (this.nextBolt <= 0) {

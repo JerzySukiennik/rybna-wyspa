@@ -500,7 +500,7 @@ export class Game {
       return {
         pick: (id) => this.farm.pick(me, id),
         throw: (o, v) => this.farm.throwOne(me, o, v),
-        dump: (o, d) => this.farm.dump(me, o, d),
+        dump: (o, d, t) => this.farm.dump(me, o, d, t),
         click: (bid) => this.farm.click(bid, me),
       };
     }
@@ -513,7 +513,7 @@ export class Game {
 
   nearSell() {
     const f = this.player.feet;
-    if (Math.hypot(f.x - this.structs.sell.pos.x, f.z - this.structs.sell.pos.z) < 5) return this.structs.sell;
+    if (Math.hypot(f.x - this.structs.sell.pos.x, f.z - this.structs.sell.pos.z) < 6.5) return this.structs.sell;
     for (const b of this.blocks.blocks.values()) if (b.def.kind === 'sell' && b.pos.distanceTo(f) < 4.5) return { pos: b.pos.clone().add(new THREE.Vector3(0, 2.6, 0)), top: b.pos.y + 2.6 };
     return null;
   }
@@ -613,9 +613,10 @@ export class Game {
     if (this.role === 'leader') this.store.addCash(1e6, true);
   }
 
-  frame(now) {
-    requestAnimationFrame((t) => this.frame(t));
-    const dt = Math.min(0.1, (now - this.last) / 1000);
+  frame() {
+    requestAnimationFrame(() => this.frame());
+    const now = performance.now();
+    const dt = Math.max(0, Math.min(0.1, (now - this.last) / 1000));
     this.last = now;
     this.time += dt;
     U.time.value = this.time;
@@ -647,6 +648,7 @@ export class Game {
       this.hud.stack(this.myStack(), cap, this.store.state.mult || 1);
       this.player.carry = Math.min(1, this.myStack().length / Math.max(8, cap));
       this.labelFish();
+      this.tipsTick(dt);
     }
     if (this.net) this.net.frame(dt);
     this.avatars.frame(dt, this.net ? this.net.renderTime() : this.time);
@@ -740,6 +742,7 @@ export class Game {
     if (this.grassDirty) { this.grassDirty = false; this.grass.setShapes(this.grassShapes()); }
     this.grass.update(this.time, this.player.feet, ['wichura', 'burza'].includes(w.id) ? 2.6 : 1, ['mroz', 'sniezyca'].includes(w.id) ? 0.8 : 0);
     U.lamp.value = L.lampK;
+    this.scene.environmentIntensity = 0.08 + 0.92 * Math.pow(1 - L.night, 1.5);
     waterLight.value.setScalar(0.35 + 0.65 * (1 - L.night * 0.75));
     this.light = L;
     this.weatherNow = w;
@@ -753,6 +756,28 @@ export class Game {
       }
       this.audio.setMood(night ? 'night' : 'day');
     }
+  }
+
+  tipsTick(dt) {
+    this.tipT = (this.tipT || 0) - dt;
+    if (this.tipT > 0 || !this.store) return;
+    this.tipT = 0.5;
+    const s = this.store.state;
+    const blocks = [...this.blocks.blocks.values()];
+    const hasPump = blocks.some((b) => b.def.kind === 'spawner');
+    const belts = blocks.filter((b) => b.def.kind === 'belt' || b.def.kind === 'flume').length;
+    const sold = Object.values(s.album || {}).reduce((a, x) => a + (x.n || 0), 0);
+    let t = null;
+    if (!hasPump) t = 'Wybierz <kbd>2</kbd> ręczną pompę i postaw ją <kbd>LPM</kbd> niedaleko startu.';
+    else if (sold === 0 && this.myStack().length === 0) t = 'Wróć do rąk <kbd>1</kbd> i klikaj pompę <kbd>LPM</kbd>. Ryby wyskoczą na trawę, zbieraj je <kbd>LPM</kbd>.';
+    else if (sold === 0) t = 'Zanieś stos do <b>SKUPU</b> (drogowskaz) i wysyp go do leja <kbd>Q</kbd>.';
+    else if (belts < 3) t = 'Taśma niesie ryby sama. Wybierz <kbd>3</kbd> i ułóż linię od pompy do skupu. <kbd>Shift</kbd> łączy końce.';
+    else if ((s.earned || 0) < 400) t = 'Kupuj więcej w <b>SKLEPIE</b> <kbd>E</kbd>. Sieć rybacka łowi sama, a rynny z wodą nie psują ryb.';
+    else if (!this.tipDone) { this.tipDone = true; this.hud.toast('Samouczek zaliczony. Tab otwiera rejestr farmy: zadania, album, ranking.', 'gold'); }
+    const el = document.getElementById('tip');
+    if (!t || this.panels.open || this.panels.shopOpen) { el.classList.add('hidden'); return; }
+    el.classList.remove('hidden');
+    if (this.lastTip !== t) { document.getElementById('tip-t').innerHTML = t; this.lastTip = t; }
   }
 
   grassShapes() {

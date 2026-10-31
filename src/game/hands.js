@@ -137,12 +137,17 @@ export class Hands {
     this.aim();
     const flat = new THREE.Vector3(dir.x, 0, dir.z).normalize();
     let origin = eye.clone().addScaledVector(flat, 0.7).add(new THREE.Vector3(0, -0.45, 0));
+    let target = null;
     const sell = g.nearSell();
     if (sell) {
       const to = new THREE.Vector3(sell.pos.x - eye.x, 0, sell.pos.z - eye.z);
-      if (to.length() < 4) { flat.copy(to.normalize()); origin = eye.clone().addScaledVector(flat, 0.8).add(new THREE.Vector3(0, -0.2, 0)); }
+      if (to.length() < 6.5) {
+        flat.copy(to.normalize());
+        origin = eye.clone().addScaledVector(flat, 0.6).add(new THREE.Vector3(0, -0.25, 0));
+        target = new THREE.Vector3(sell.pos.x, (sell.top || sell.pos.y) - 0.3, sell.pos.z);
+      }
     }
-    g.authority.dump(origin, flat);
+    g.authority.dump(origin, flat, target);
     g.audio.play('dump', { vol: 0.8 });
   }
 

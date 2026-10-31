@@ -279,7 +279,7 @@ export class Net {
     } else if (m.t === 'throw') {
       g.farm.throwOne(pid, new THREE.Vector3(...m.o), new THREE.Vector3(...m.v));
     } else if (m.t === 'dump') {
-      g.farm.dump(pid, new THREE.Vector3(...m.o), new THREE.Vector3(...m.d));
+      g.farm.dump(pid, new THREE.Vector3(...m.o), new THREE.Vector3(...m.d), m.g ? new THREE.Vector3(...m.g) : null);
     } else if (m.t === 'click') {
       g.farm.click(m.bid, pid);
     }
@@ -550,7 +550,7 @@ export class Net {
     return {
       pick: (id) => send({ t: 'pick', id }),
       throw: (o, v) => send({ t: 'throw', o: [o.x, o.y, o.z], v: [v.x, v.y, v.z] }),
-      dump: (o, d) => send({ t: 'dump', o: [o.x, o.y, o.z], d: [d.x, d.y, d.z] }),
+      dump: (o, d, t) => send({ t: 'dump', o: [o.x, o.y, o.z], d: [d.x, d.y, d.z], g: t ? [t.x, t.y, t.z] : null }),
       click: (bid) => send({ t: 'click', bid }),
     };
   }
