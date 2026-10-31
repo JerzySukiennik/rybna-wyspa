@@ -241,7 +241,7 @@ export class Sky {
     this.hemi.color.copy(L.hemiSky);
     this.hemi.groundColor.copy(pick('hemiGround'));
     this.hemi.intensity = L.hemiI;
-    this.scene.fog.color.copy(u.uHorizon.value);
+    this.scene.fog.color.copy(u.uHorizon.value).lerp(tmpB.set('#d9d3c4'), clamp(w.fog, 0, 1) * 0.45 * dayK);
     const fogK = clamp(w.fog, 0, 1);
     const mist = clamp((w.fog - 0.7) / 0.3, 0, 1);
     this.scene.fog.near = lerp(lerp(260, 40, fogK / 0.7 > 1 ? 1 : fogK / 0.7), 6, mist);

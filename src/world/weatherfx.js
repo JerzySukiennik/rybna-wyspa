@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { coastDist } from './island.js';
 import { rng } from '../util.js';
 
-const RAIN = 4000;
+const RAIN = 5200;
 const SNOW = 1400;
 const FLIES = 140;
 
@@ -35,7 +35,7 @@ uniform vec3 uCol;
 varying float vA;
 varying float vT;
 void main() {
-  gl_FragColor = vec4(uCol, 0.42 * uK * vA * (1.0 - vT * 0.65));
+  gl_FragColor = vec4(uCol, 0.36 * uK * vA * (1.0 - vT * 0.6));
 }`;
 
 export class WeatherFx {
@@ -46,7 +46,7 @@ export class WeatherFx {
     quad.setAttribute('position', new THREE.BufferAttribute(new Float32Array([-0.5, 0, 0, 0.5, 0, 0, 0.5, 1, 0, -0.5, 1, 0]), 3));
     quad.setIndex([0, 1, 2, 0, 2, 3]);
     const off = new Float32Array(RAIN * 4);
-    for (let i = 0; i < RAIN; i++) off.set([(r() - 0.5) * 48, r() * 32, (r() - 0.5) * 48, 0.5 + r() * 0.35], i * 4);
+    for (let i = 0; i < RAIN; i++) off.set([(r() - 0.5) * 48, r() * 32, (r() - 0.5) * 48, 0.3 + r() * 0.2], i * 4);
     quad.setAttribute('aOff', new THREE.InstancedBufferAttribute(off, 4));
     quad.instanceCount = RAIN;
     const slant = Math.tan((12 * Math.PI) / 180);

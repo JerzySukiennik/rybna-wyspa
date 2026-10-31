@@ -250,7 +250,7 @@ function bush() {
   const S = new Soup();
   const pal = [C('#5c8c40'), C('#6a9a4a'), C('#527f3a'), C('#76a554')];
   const puffs = [[0, 0.55, 0, 0.75, 0.6, 0.7, 1], [0.55, 0.45, 0.25, 0.5, 0.45, 0.5, 2], [-0.5, 0.42, -0.2, 0.52, 0.42, 0.5, 3], [0.1, 0.4, -0.55, 0.48, 0.4, 0.45, 4], [-0.15, 0.95, 0.15, 0.45, 0.4, 0.45, 5]];
-  for (const [x, y, z, rx, ry, rz, sd] of puffs) crown(S, [x, y, z], [rx, ry, rz], 1, pal[0], sd, 0.1, { flatBottom: -0.55 });
+  for (const [x, y, z, rx, ry, rz, sd] of puffs) crown(S, [x, y, z], [rx, ry, rz], 0, pal[0], sd, 0.08, { flatBottom: -0.55 });
   return S;
 }
 
@@ -368,10 +368,10 @@ function flowers() {
   const S = new Soup();
   const stem = C('#5a8236'), leafC = C('#6a9440');
   const kinds = [
-    { petal: C('#f6f3ea'), mid: C('#eec43a'), n: 6, r: 0.026 },
-    { petal: C('#f2c83c'), mid: C('#d0901c'), n: 5, r: 0.019 },
-    { petal: C('#7a92e0'), mid: C('#f2e6a0'), n: 5, r: 0.016 },
-    { petal: C('#e8a8c4'), mid: C('#f0d060'), n: 5, r: 0.018 },
+    { petal: C('#f6f3ea'), mid: C('#eec43a'), n: 6, r: 0.038 },
+    { petal: C('#f2c83c'), mid: C('#d0901c'), n: 5, r: 0.029 },
+    { petal: C('#7a92e0'), mid: C('#f2e6a0'), n: 5, r: 0.026 },
+    { petal: C('#e8a8c4'), mid: C('#f0d060'), n: 5, r: 0.03 },
   ];
   const pts = [];
   for (let t = 0; t < 300 && pts.length < 8; t++) {
@@ -381,15 +381,15 @@ function flowers() {
   }
   pts.forEach((b, i) => {
     const K = kinds[Math.floor(hh(i, 7, 61) * kinds.length)];
-    const h = 0.1 + 0.16 * hh(i, 3, 61);
+    const h = 0.07 + 0.12 * hh(i, 3, 61);
     const top = add(b, [(hh(i, 4, 61) - 0.5) * 0.07, h, (hh(i, 5, 61) - 0.5) * 0.07]);
     tri2(S, add(b, [0.0035, 0, 0]), add(b, [-0.0035, 0, 0]), top, stem);
     flower(S, top, K.n, K, i);
   });
   for (let i = 0; i < 4; i++) {
     const a = i * 1.7 + 0.4, b = [Math.cos(a) * 0.08, 0, Math.sin(a) * 0.06];
-    const t = add(b, [Math.cos(a) * 0.1, 0.12 + 0.05 * hh(i, 9, 61), Math.sin(a) * 0.1]);
-    const s = [-Math.sin(a) * 0.012, 0, Math.cos(a) * 0.012];
+    const t = add(b, [Math.cos(a) * 0.1, 0.06 + 0.03 * hh(i, 9, 61), Math.sin(a) * 0.1]);
+    const s = [-Math.sin(a) * 0.02, 0, Math.cos(a) * 0.02];
     tri2(S, add(b, s), sub(b, s), t, leafC);
   }
   return S;
