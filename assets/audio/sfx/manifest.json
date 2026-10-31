@@ -233,6 +233,18 @@
   "loop": false,
   "gain": 1.0
  },
+ "fry": {
+  "file": "fry.mp3",
+  "dur": 2.25,
+  "loop": false,
+  "gain": 0.62
+ },
+ "fryer_loop": {
+  "file": "fryer_loop.mp3",
+  "dur": 5.0,
+  "loop": true,
+  "gain": 0.74
+ },
  "zap": {
   "file": "zap.mp3",
   "dur": 1.2,

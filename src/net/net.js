@@ -338,7 +338,7 @@ export class Net {
 
   fishDel(id, reason, extra = {}) {
     if (!this.isLeader) return;
-    this.broadcast({ t: 'del', id, r: reason, v: extra.value || 0, p: extra.pos ? [extra.pos.x, extra.pos.y, extra.pos.z] : null });
+    this.broadcast({ t: 'del', id, r: reason, v: extra.value || 0, p: extra.pos ? [extra.pos.x, extra.pos.y, extra.pos.z] : null, z: extra.zone || null, b: extra.bonus ? 1 : 0 });
   }
 
   sendMeta(f) {
@@ -429,7 +429,7 @@ export class Net {
       this.fishMeta.delete(m.id);
       this.buf.delete(m.id);
       g.fishView.remove(m.id);
-      if (meta && m.r === 'sold') g.saleFx(m.p ? new THREE.Vector3(...m.p) : g.structs.sell.pos, m.v, meta);
+      if (meta && m.r === 'sold') g.saleFx(m.p ? new THREE.Vector3(...m.p) : g.structs.sell.pos, m.v, meta, m.z, !!m.b);
       else if (meta && m.r === 'lost' && m.p) { g.fx.burst('splash', new THREE.Vector3(m.p[0], 0.05, m.p[2]), 12); g.audio.play('splash_small', { pos: new THREE.Vector3(...m.p) }); }
       void last;
     } else if (m.t === 'meta') {

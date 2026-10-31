@@ -330,6 +330,7 @@ export function buildStructures(scene, phys, mat, models) {
   };
   arrow('SKUP RYB', SPOTS.sell, 2.95);
   arrow('SKLEP', SPOTS.shop, 2.3);
+  out.arrow = arrow;
 
   return out;
 }

@@ -295,8 +295,7 @@ export class Build {
     g.phys.world.intersectionsWithShape(c, quat, shape, (col) => {
       if (col.parent() === g.phys.island) return true;
       if (g.isStructure(col)) {
-        const sell = g.structs.sell;
-        if (sell && col.parent() === sell.body && col.handle !== sell.booth) return true;
+        if (g.openBodies && g.openBodies.has(col.parent()) && !g.solidHandles.has(col.handle)) return true;
         bad = 'Tu stoi budynek';
         return false;
       }

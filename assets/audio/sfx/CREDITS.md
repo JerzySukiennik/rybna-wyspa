@@ -42,6 +42,8 @@ Trimmed, faded, looped where needed and loudness-normalised with ffmpeg.
 - `bubble_2.mp3`: "Bubbles In Water" by calebrankin (Freesound, CC0 1.0) https://freesound.org/people/calebrankin/sounds/529383/
 - `freezer.mp3`: "Top loading freezer lid open" by kezzo78 (Freesound, CC0 1.0) https://freesound.org/people/kezzo78/sounds/457069/
 - `smoker.mp3`: "Fire Crackle and Flames 002" by TheWoodlandNomad (Freesound, CC0 1.0) https://freesound.org/people/TheWoodlandNomad/sounds/363092/
+- `fry.mp3`: "jx-fryingfish.wav" by PerMagnusLindborg (Freesound, CC0 1.0) https://freesound.org/people/PerMagnusLindborg/sounds/223728/
+- `fryer_loop.mp3`: "deep fryer" by ursenfuns (Freesound, CC0 1.0) https://freesound.org/people/ursenfuns/sounds/440587/
 - `zap.mp3`: "Electrical Shock (Zap).wav" by BigKahuna360 (Freesound, CC0 1.0) https://freesound.org/people/BigKahuna360/sounds/160421/
 - `geiger.mp3`: "Geiger counter (dry)" by Sanderboah (Freesound, CC0 1.0) https://freesound.org/people/Sanderboah/sounds/674113/
 - `machine.mp3`: "machine industrial metal shaper3 trim and handle.flac" by kyles (Freesound, CC0 1.0) https://freesound.org/people/kyles/sounds/453311/

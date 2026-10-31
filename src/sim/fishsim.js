@@ -8,6 +8,7 @@ import { WEATHERS, EXPOSE_EVERY, EXPOSE_CHANCE } from '../data/weather.js';
 import { G, groups, GRAVITY } from './physics.js';
 import { bodyLength, fatOf, addTrait, hasTrait, fishValue } from './value.js';
 import { curveTangent, FLUME_WATER } from '../blocks/defs.js';
+import { MENU_MULT } from '../data/menu.js';
 
 export const FISH_CAP = 400;
 const ICE_TIME = 12;
@@ -159,8 +160,9 @@ export class FishSim {
   sell(f, zone) {
     if (f.sold) return;
     f.sold = true;
-    const value = fishValue(f, this.ctx.mult());
-    this.remove(f.id, 'sold', { value, zone: zone.tag, by: f.by });
+    const bonus = zone.tag === 'smazalnia' && this.ctx.onMenu ? this.ctx.onMenu(f.sp) : false;
+    const value = fishValue(f, this.ctx.mult()) * (bonus ? MENU_MULT : 1);
+    this.remove(f.id, 'sold', { value, zone: zone.tag, bonus, by: f.by });
   }
 
   update(dt) {

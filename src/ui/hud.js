@@ -177,13 +177,15 @@ export class Hud {
     const R = RARITIES[S.rarity];
     const v = fishValue(f, mult);
     const fresh = Math.round(Math.max(0.5, 1 - 0.002 * (f.dry || 0)) * 100);
-    const key = `${f.id}|${f.tr.join('.')}|${f.v}|${Math.round(v * 100)}|${fresh}|${f.cold > 0}|${f.wet}|${f.onIce}`;
+    const onMenu = !!(this.menu && this.menu.has(f.sp));
+    const key = `${f.id}|${f.tr.join('.')}|${f.v}|${Math.round(v * 100)}|${fresh}|${f.cold > 0}|${f.wet}|${f.onIce}|${onMenu}`;
     if (key !== this.lastLabel) {
       this.lastLabel = key;
       const chips = [];
       if (f.v) chips.push(`<span class="chip v${f.v}">${VARIANTS[f.v].name} ×${VARIANTS[f.v].m}</span>`);
       for (const i of f.tr) chips.push(`<span class="chip">${esc(TRAITS[i].name)}${TRAITS[i].m !== 1 ? ` ×${String(TRAITS[i].m).replace('.', ',')}` : ''}</span>`);
       if (f.up) chips.push(`<span class="chip up">+${Math.round(f.up * 100)}% z maszyn</span>`);
+      if (onMenu) chips.push('<span class="chip menu">danie dnia w smażalni ×2</span>');
       const state = f.cold > 0 ? 'zimna' : f.wet ? 'w wodzie' : f.onIce ? 'na lodzie' : `${fresh}%`;
       el.style.setProperty('--rc', R.color);
       const img = this.icons ? `<img src="${this.icons.fish(f.sp)}" alt="">` : '<span></span>';

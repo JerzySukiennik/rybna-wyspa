@@ -16,6 +16,8 @@ import { Grass } from '../world/grass.js';
 import { buildDecor } from '../world/decor.js';
 import { buildStructures, sellHole, redrawSigns } from '../world/structures.js';
 import { buildRiver } from '../world/river.js';
+import { buildSmazalnia } from '../world/smazalnia.js';
+import { menuAt, MENU_MULT } from '../data/menu.js';
 import { BlockWorld } from '../world/blockworld.js';
 import { blockMaterial, addWet, U, waterLight } from '../render/materials.js';
 import { FishView } from '../render/fishview.js';
@@ -112,12 +114,16 @@ export class Game {
     this.blockMat = blockMaterial();
     this.river = buildRiver(this.scene, this.blockMat);
     this.structs = buildStructures(this.scene, this.phys, this.blockMat, this.models);
-    if (document.fonts) Promise.all([document.fonts.load('700 64px Oswald'), document.fonts.load('400 64px "Alfa Slab One"')]).then(() => redrawSigns()).catch(() => {});
+    this.smaz = buildSmazalnia(this.scene, this.phys, this.blockMat, this.models, this.structs);
+    this.openBodies = new Set([this.structs.sell.body, this.smaz.body]);
+    this.solidHandles = new Set([this.structs.sell.booth]);
+    this.menuSet = new Set();
+    if (document.fonts) Promise.all([document.fonts.load('700 64px Oswald'), document.fonts.load('400 64px "Alfa Slab One"'), document.fonts.load('700 64px Caveat')]).then(() => { redrawSigns(); this.menuSlot = null; }).catch(() => {});
     const decoMat = addWet(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }));
     progress(0.46, 'Drzewa i trzciny…');
     this.decor = buildDecor(this.scene, this.phys, this.models, decoMat, this.blockMat);
     this.phys.world.forEachRigidBody((b) => { if (b.isFixed()) this.structBodies.add(b.handle); });
-    this.lamps = [...(this.structs.lamps || []), ...(this.decor.lamps || [])].slice(0, 3).map((p) => {
+    this.lamps = [...(this.structs.lamps || []), ...(this.decor.lamps || []), ...(this.smaz.lamps || [])].slice(0, 4).map((p) => {
       const l = new THREE.PointLight('#ffb06a', 0, 16, 2);
       l.position.copy(p);
       this.scene.add(l);
@@ -337,6 +343,7 @@ export class Game {
       luck: () => this.farm.luck(),
       mult: () => this.farm.mult(),
       coolHands: () => upVal(store.state.up, 'lodowka'),
+      onMenu: (sp) => this.menuSet.has(sp),
       outdoors: (p) => this.outdoors(p),
     });
     this.farm = new Farm({ sim: this.sim, blocks: this.blocks, store, clock: () => this.clock(), emit: (t, d) => this.onFarm(t, d) });
@@ -364,7 +371,7 @@ export class Game {
     this.prev.delete(f.id);
     if (reason === 'sold') {
       this.farm.onSold(f, extra.value, extra.by);
-      this.saleFx(pos || this.structs.sell.pos, extra.value, f);
+      this.saleFx(pos || this.structs.sell.pos, extra.value, f, extra.zone, extra.bonus);
     } else if (reason === 'lost' && pos) {
       this.fx.burst('splash', new THREE.Vector3(pos.x, 0.05, pos.z), 14, Math.max(0.7, f.L * 2));
       this.audio.play('splash_small', { pos, vol: 0.8 });
@@ -373,11 +380,18 @@ export class Game {
     if (this.net) this.net.fishDel(f.id, reason, extra);
   }
 
-  saleFx(pos, value, f) {
+  saleFx(pos, value, f, zone, bonus) {
     const p = new THREE.Vector3(pos.x, (this.structs.sell.top || pos.y) + 1.2, pos.z);
-    if (pos.distanceTo(this.structs.sell.pos) < 4) p.copy(this.structs.sell.pos).add(new THREE.Vector3(0, 1.4, 0));
+    const fry = zone === 'smazalnia' || pos.distanceTo(this.smaz.pos) < 2.5;
+    if (fry) {
+      p.copy(this.smaz.pos).add(new THREE.Vector3(0, 1.3, 0));
+      this.audio.play('fry', { pos: this.smaz.pos, vol: 0.9, gap: 0.15 });
+      this.fx.burst('smoke', this.smaz.chimney, 3, 1.6);
+      this.fx.burst('smoke', this.smaz.front, 2, 1.0);
+      if (bonus && !this.menuHint) { this.menuHint = true; this.hud.toast(`Danie dnia w smażalni: ${SPECIES[f.sp].name} ×${MENU_MULT}!`, 'gold'); }
+    } else if (pos.distanceTo(this.structs.sell.pos) < 4) p.copy(this.structs.sell.pos).add(new THREE.Vector3(0, 1.4, 0));
     const R = RARITIES[SPECIES[f.sp].rarity];
-    this.fx.money(p, value, f.v === 2 ? '#ffd23a' : f.v === 3 ? '#ff9ff0' : SPECIES[f.sp].rarity === 0 ? '#f2e3b0' : R.color);
+    this.fx.money(p, value, bonus ? '#ffd23a' : f.v === 2 ? '#ffd23a' : f.v === 3 ? '#ff9ff0' : SPECIES[f.sp].rarity === 0 ? '#f2e3b0' : R.color, bonus ? ` ×${MENU_MULT}` : '');
     this.fx.burst('coin', p, Math.min(24, 4 + Math.floor(Math.log10(1 + value) * 3)), 1);
     const big = value > Math.max(800, (this.farm ? this.farm.rate : 0) * 0.3);
     this.audio.play(big ? 'sell_big' : value > 200 ? 'sell_3' : value > 30 ? 'sell_2' : 'sell_1', { pos: p, vol: 0.85, range: 45, gap: 0.06 });
@@ -529,6 +543,7 @@ export class Game {
 
   nearSell() {
     const f = this.player.feet;
+    if (Math.hypot(f.x - this.smaz.pos.x, f.z - this.smaz.pos.z) < 5) return { pos: this.smaz.pos, top: this.smaz.top };
     if (Math.hypot(f.x - this.structs.sell.pos.x, f.z - this.structs.sell.pos.z) < 6.5) return this.structs.sell;
     for (const b of this.blocks.blocks.values()) if (b.def.kind === 'sell' && b.pos.distanceTo(f) < 4.5) return { pos: b.pos.clone().add(new THREE.Vector3(0, 2.6, 0)), top: b.pos.y + 2.6 };
     return null;
@@ -787,7 +802,7 @@ export class Game {
     if (this.grassDirty) {
       this.grassDirty = false;
       this.grass.setShapes(this.grassShapes());
-      const fixed = [...(this.structs.blobs || []), ...(this.decor.blobs || [])];
+      const fixed = [...(this.structs.blobs || []), ...(this.decor.blobs || []), ...(this.smaz.blobs || [])];
       for (const b of this.blocks.blocks.values()) if (!b.def.ghost) fixed.push({ x: b.pos.x, y: b.pos.y, z: b.pos.z, w: b.def.dim[0], l: b.def.dim[2], yaw: b.rec.ry || 0 });
       this.contact.setFixed(fixed);
     }
@@ -795,6 +810,21 @@ export class Game {
     if (this.structs.chimney && (this.smokeT = (this.smokeT || 0) - dt) <= 0) {
       this.smokeT = 0.35 + Math.random() * 0.2;
       this.fx.burst('smoke', this.structs.chimney, 1, 1.4);
+      this.fx.burst('smoke', this.smaz.chimney, 1, 1.1);
+    }
+    if ((this.menuT = (this.menuT || 0) - dt) <= 0) {
+      this.menuT = 1;
+      const menu = menuAt(tSec, seed);
+      const mins = Math.ceil(menu.left / 60);
+      if (menu.slot !== this.menuSlot || mins !== this.menuMins) {
+        const changed = this.menuSlot != null && menu.slot !== this.menuSlot;
+        this.menuSlot = menu.slot;
+        this.menuMins = mins;
+        this.menuSet = new Set(menu.sp);
+        this.hud.menu = this.menuSet;
+        this.smaz.board.draw(menu.sp, menu.left);
+        if (changed && this.playing) this.hud.toast(`Smażalnia: nowe danie dnia, ${menu.sp.map((i) => SPECIES[i].name).join(', ')} (×${MENU_MULT})`, 'gold');
+      }
     }
     this.grass.update(this.time, this.player.feet, ['wichura', 'burza'].includes(w.id) ? 2.6 : 1, ['mroz', 'sniezyca'].includes(w.id) ? 0.8 : 0);
     U.lamp.value = L.lampK;
@@ -831,6 +861,7 @@ export class Game {
     else if (sold === 0) t = 'Zanieś stos do <b>SKUPU</b> (drogowskaz) i wysyp go do leja <kbd>Q</kbd>.';
     else if (belts < 3) t = 'Taśma niesie ryby sama. Wybierz <kbd>3</kbd> i ułóż linię od pompy do skupu. Końce taśm same się łączą, <kbd>R</kbd> obraca.';
     else if ((s.earned || 0) < 400) t = 'Kupuj więcej w <b>SKLEPIE</b> <kbd>E</kbd>. Sieć rybacka łowi sama, a rynny z wodą nie psują ryb.';
+    else if (!this.menuHint && (s.earned || 0) < 3000) t = `<b>SMAŻALNIA</b> nad rzeką skupuje ryby. Gatunki z tablicy „danie dnia” płaci ×${MENU_MULT}.`;
     else if (!this.tipDone) { this.tipDone = true; this.hud.toast('Samouczek zaliczony. Tab otwiera rejestr farmy: zadania, album, ranking.', 'gold'); }
     const el = document.getElementById('tip');
     if (!t) { el.classList.add('hidden'); return; }
@@ -840,7 +871,7 @@ export class Game {
   }
 
   grassShapes() {
-    const out = [{ x: SPOTS.sell.x, z: SPOTS.sell.z, r: 6.3 }, { x: SPOTS.shop.x, z: SPOTS.shop.z, w: 5.4, l: 4.1, yaw: -Math.PI / 2 }];
+    const out = [{ x: SPOTS.sell.x, z: SPOTS.sell.z, r: 6.3 }, { x: SPOTS.shop.x, z: SPOTS.shop.z, w: 5.4, l: 4.1, yaw: -Math.PI / 2 }, this.smaz.footprint, this.smaz.hopperShape];
     for (const b of this.blocks.blocks.values()) {
       if (b.def.ghost) continue;
       out.push({ x: b.pos.x, z: b.pos.z, w: b.def.dim[0], l: b.def.dim[2], yaw: b.rec.ry || 0 });
@@ -878,6 +909,8 @@ export class Game {
       a.loop('sfx', 'conveyor_loop', Math.min(0.5, belts * 0.12));
       a.loop('sfx', 'flume_loop', Math.min(0.55, flumes * 0.15));
       a.loop('sfx', 'jetpack_loop', this.player.jetting ? 0.5 : 0);
+      const fd = this.smaz.front.distanceTo(camPos);
+      a.loop('sfx', 'fryer_loop', fd < 16 ? 0.32 * (1 - fd / 16) : 0);
     }
     a.tick(dt);
   }

@@ -142,7 +142,7 @@ export class Fx {
     (d.add ? this.add : this.norm).emit(p, d, color ? new THREE.Color(color) : this.cols[kind], count, scale);
   }
 
-  money(p, value, color = '#ffd23a') {
+  money(p, value, color = '#ffd23a', suffix = '') {
     let spr = this.popPool.pop();
     if (!spr) {
       const c = document.createElement('canvas');
@@ -156,10 +156,10 @@ export class Fx {
     const c = spr.userData.c;
     const x = c.getContext('2d');
     x.clearRect(0, 0, 256, 64);
-    x.font = '900 40px Nunito, system-ui, sans-serif';
+    x.font = `900 ${suffix ? 32 : 40}px Nunito, system-ui, sans-serif`;
     x.textAlign = 'center';
     x.textBaseline = 'middle';
-    const txt = '+' + fmtZl(value);
+    const txt = '+' + fmtZl(value) + suffix;
     x.lineWidth = 8;
     x.strokeStyle = 'rgba(60,40,0,0.85)';
     x.strokeText(txt, 128, 34);

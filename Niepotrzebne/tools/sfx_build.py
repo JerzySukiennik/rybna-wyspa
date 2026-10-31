@@ -58,6 +58,8 @@ SPEC = {
     'bubble_2': dict(src='529383', at=2.46, len=0.65, gain=0.6),
     'freezer': dict(src='457069', at=2.0, len=1.5, gain=0.6),
     'smoker': dict(src='363092', at=9.0, len=1.5, gain=0.6),
+    'fry': dict(src='223728', at=0.33, len=2.25, gain=0.75),
+    'fryer_loop': dict(kind='loop', src='440587', at=1.0, len=5.0, xf=1.2, gain=0.3),
     'zap': dict(src='160421', at=0.12, len=1.2, gain=0.7),
     'geiger': dict(src='674113', at=0.0, len=1.5, gain=0.6),
     'machine': dict(src='453311', at=7.43, len=1.5, gain=0.7),

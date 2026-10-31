@@ -85,6 +85,7 @@ kbd { font-family: var(--type); font-weight: 700; font-size: 0.82em; background:
 .chip.v2 { border-color: #b8860b; color: #7a5600; background: rgba(255, 210, 90, 0.4); }
 .chip.v3 { border-color: #a14fd1; color: #7a2fa8; background: linear-gradient(90deg, rgba(255, 160, 230, 0.4), rgba(160, 220, 255, 0.4), rgba(190, 255, 160, 0.4)); }
 .chip.up { border-style: dashed; }
+.chip.menu { border-color: var(--amber); color: #7a5600; background: rgba(232, 197, 106, 0.35); }
 #banner { position: absolute; left: 50%; top: 20%; transform: translateX(-50%) rotate(-3deg) scale(0.9); opacity: 0; transition: opacity 0.3s, transform 0.3s; pointer-events: none; text-align: center; }
 #banner.on { opacity: 1; transform: translateX(-50%) rotate(-3deg) scale(1); }
 #banner .bs { border: 5px solid var(--teal); color: var(--teal); padding: 8px 22px 10px; background: rgba(245, 238, 221, 0.92); box-shadow: 0 8px 26px rgba(20, 30, 40, 0.35); }
