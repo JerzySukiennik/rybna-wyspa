@@ -75,6 +75,7 @@ function motor(g, x, z, def, side = 1) {
 
 function straightBelt(g, w, l, def) {
   const top = BELT_TOP, hw = w / 2;
+  for (const s of [-1, 1]) for (const e of [-1, 1]) for (let k = 0; k < 3; k++) g.box(s * (hw + 0.004), top - 0.03, e * (l / 2 - 0.05 - k * 0.07), 0.01, 0.1, 0.07, k % 2 ? '#1f2326' : '#d9a43a');
   for (const s of [-1, 1]) {
     g.box(s * (hw - 0.03), top + 0.02, 0, 0.06, 0.2, l, K.metalL, { top: K.galvL });
     g.box(s * (hw - 0.005), top + 0.115, 0, 0.012, 0.012, l, K.galvL);
@@ -516,17 +517,22 @@ function machineVisual(g, def) {
   const [w, h, l] = def.dim;
   straightBelt(g, 1, l, { fast: 0 });
   const hw = w / 2, sh = h - BELT_TOP;
-  const housing = '#8a9298', housingD = '#6f777d', trim = '#59616a';
+  const housing = '#56735c', housingD = '#41594a', trim = '#2f3d34';
   for (const s of [-1, 1]) {
     g.box(s * (hw - 0.09), BELT_TOP + sh / 2 - 0.02, 0, 0.16, sh, l * 0.8, housing, { top: housingD });
     g.box(s * (hw - 0.005), BELT_TOP + sh * 0.45, 0, 0.012, sh * 0.5, l * 0.5, trim);
-    g.box(s * (hw + 0.002), BELT_TOP + sh * 0.45, 0, 0.012, sh * 0.34, l * 0.34, '#2f363b');
+    g.box(s * (hw + 0.002), BELT_TOP + sh * 0.45, 0, 0.012, sh * 0.3, l * 0.3, '#86a8ac');
+    g.box(s * (hw + 0.004), BELT_TOP + sh * 0.45, 0, 0.012, sh * 0.3 + 0.05, 0.025, trim);
+    g.box(s * (hw + 0.004), BELT_TOP + sh * 0.45, 0, 0.012, 0.025, l * 0.3 + 0.05, trim);
     for (const zz of [-1, 1]) g.box(s * (hw - 0.09), BELT_TOP / 2, zz * l * 0.36, 0.14, BELT_TOP, 0.14, housingD);
+    for (const yy of [BELT_TOP + 0.08, h - 0.22]) for (let k = 0; k < 5; k++) g.box(s * (hw + 0.004), yy, -l * 0.36 + k * l * 0.18, 0.012, 0.03, 0.03, trim);
   }
   g.box(0, h - 0.09, 0, w, 0.18, l * 0.84, housing, { top: housingD });
-  g.box(0, h + 0.005, 0, w - 0.16, 0.02, l * 0.7, acc);
+  g.box(0, h + 0.01, 0, w - 0.3, 0.03, l * 0.5, trim);
+  g.box(0, h + 0.03, 0, w - 0.4, 0.02, l * 0.42, acc);
   for (const zz of [-1, 1]) {
     g.box(0, h - 0.24, zz * l * 0.41, w - 0.32, 0.12, 0.03, trim);
+    for (let k = 0; k < 7; k++) g.box(-(w - 0.4) / 2 + (k + 0.5) * ((w - 0.4) / 7), h - 0.24, zz * (l * 0.41 + 0.018), (w - 0.4) / 7 - 0.005, 0.1, 0.01, k % 2 ? '#1f2326' : '#d9a43a');
     for (let i = 0; i < 6; i++) g.box(-0.3 + i * 0.12, BELT_TOP + 0.3 + 0.08, zz * l * 0.405, 0.1, sh - 0.62, 0.012, '#3c4146');
   }
   g.box(hw + 0.08, BELT_TOP + 0.45, l * 0.22, 0.14, 0.34, 0.24, '#d6d8d2', { top: '#b9bcb6' });
@@ -619,9 +625,14 @@ function decoVisual(g, def) {
     g.box(0.34, 2.61, 0, 0.6, 0.18, 0.02, '#2a8f86');
     g.box(0.34, 2.43, 0, 0.6, 0.18, 0.02, '#d9a43a');
   } else if (def.shape === 'bench') {
-    g.box(0, 0.45, 0, w, 0.07, l * 0.9, K.woodL);
-    g.box(0, 0.75, l * 0.4, w, 0.18, 0.05, K.wood);
-    for (const s of [-1, 1]) { g.box(s * (w / 2 - 0.1), 0.22, 0, 0.07, 0.44, l * 0.8, K.dark); g.box(s * (w / 2 - 0.1), 0.6, l * 0.4, 0.06, 0.4, 0.06, K.dark); }
+    for (let i = 0; i < 4; i++) g.box(0, 0.45, -l * 0.36 + i * l * 0.21, w, 0.045, l * 0.17, i % 2 ? K.wood : K.woodL);
+    for (let i = 0; i < 2; i++) g.box(0, 0.68 + i * 0.16, l * 0.44, w, 0.11, 0.035, i % 2 ? K.wood : K.woodL);
+    for (const s of [-1, 1]) {
+      g.box(s * (w / 2 - 0.12), 0.21, -l * 0.3, 0.05, 0.42, 0.05, K.dark);
+      g.box(s * (w / 2 - 0.12), 0.21, l * 0.3, 0.05, 0.42, 0.05, K.dark);
+      g.box(s * (w / 2 - 0.12), 0.42, 0, 0.05, 0.04, l * 0.72, K.dark);
+      g.line([s * (w / 2 - 0.12), 0.42, l * 0.36], [s * (w / 2 - 0.12), 0.94, l * 0.48], 0.022, K.dark, 4);
+    }
   } else if (def.shape === 'flowers') {
     const cols = ['#d98fc4', '#e8c23a', '#f2efe6', '#9f86c8', '#6f9fd0'];
     g.cyl(0, 0, 0, 0.26, 0.2, 0.06, 7, '#6f8a45');
@@ -669,8 +680,8 @@ export function blockVisual(id) {
     funnelVisual(g, def.r, 0.34, def.out, h);
     legs(g, def.r * 1.3, def.r * 1.3, def.out, K.metalD);
   } else if (def.kind === 'ice') {
-    g.box(0, 0.06, 0, w, 0.12, l, K.tray, { top: '#8e989e' });
-    for (const s of [-1, 1]) { g.box(s * (w / 2 - 0.03), 0.22, 0, 0.06, 0.2, l, K.metalL, { top: K.galvL }); g.box(0, 0.22, s * (l / 2 - 0.03), w, 0.2, 0.06, K.metalL, { top: K.galvL }); }
+    g.box(0, 0.06, 0, w, 0.12, l, '#5f8fa6', { top: '#6f9fb5' });
+    for (const s of [-1, 1]) { g.box(s * (w / 2 - 0.03), 0.22, 0, 0.06, 0.2, l, '#7fb3c8', { top: '#a8d4e4' }); g.box(0, 0.22, s * (l / 2 - 0.03), w, 0.2, 0.06, '#7fb3c8', { top: '#a8d4e4' }); }
     const nx = Math.round(w / 0.4), nz = Math.round(l / 0.4);
     for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) {
       const hh = 0.1 + ((i * 7 + j * 3) % 5) * 0.012;
@@ -694,7 +705,7 @@ export function blockVisual(id) {
   } else {
     decoVisual(g, def);
   }
-  out.body = g.geometry();
+  out.body = g.geometry({ ao: def.kind === 'deco' || def.kind === 'lamp' ? 0.2 : 0.42 });
   vcache.set(id, out);
   return out;
 }

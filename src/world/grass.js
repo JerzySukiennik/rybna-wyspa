@@ -97,7 +97,7 @@ export class Grass {
           #endif`)
         .replace('#include <begin_vertex>', `
           vec3 transformed = position;
-          float fl0 = step(0.972, fract(aTint * 91.7));
+          float fl0 = 0.0;
           if (fl0 > 0.5 && position.y > 0.4 && position.y < 0.5) { transformed.y = 0.84; transformed.x *= 3.2; }
           vec2 wp = aOff.xy + uTile * floor((cameraPosition.xz - aOff.xy) / uTile + 0.5);
           vec2 tuv = wp / uSpan + 0.5;
@@ -135,8 +135,8 @@ export class Grass {
         .replace('#include <normal_fragment_begin>', `#include <normal_fragment_begin>
           normal = normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz);`)
         .replace('#include <color_fragment>', `#include <color_fragment>
-          vec3 gBase = vec3(0.13, 0.2, 0.07);
-          vec3 gTip = mix(vec3(0.22, 0.31, 0.11), vec3(0.3, 0.37, 0.15), vTint);
+          vec3 gBase = vec3(0.06, 0.14, 0.03);
+          vec3 gTip = mix(vec3(0.22, 0.38, 0.08), vec3(0.32, 0.48, 0.11), vTint);
           gTip = mix(gTip, vec3(0.42, 0.4, 0.15), smoothstep(0.55, 0.85, vClump) * 0.55);
           gTip = mix(gTip, vec3(0.2, 0.31, 0.08), smoothstep(0.4, 0.15, vClump) * 0.5);
           diffuseColor.rgb = mix(gBase, gTip, smoothstep(0.0, 1.0, vH)) * (0.92 + 0.14 * vTint);

@@ -34,7 +34,7 @@ export function addWet(m) {
 }
 
 export function terrainMaterial() {
-  const m = new THREE.MeshLambertMaterial({ vertexColors: true });
+  const m = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
   m.onBeforeCompile = (s) => {
     s.uniforms.uWet = U.wet;
     s.vertexShader = s.vertexShader
@@ -48,10 +48,8 @@ export function terrainMaterial() {
         float tn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(th(i), th(i + vec2(1.0, 0.0)), f.x), mix(th(i + vec2(0.0, 1.0)), th(i + vec2(1.0, 1.0)), f.x), f.y); }`)
       .replace('#include <color_fragment>', `#include <color_fragment>
         float camD = length(vWP - cameraPosition);
-        float fine = 1.0 - smoothstep(14.0, 40.0, camD);
-        float green = smoothstep(0.0, 0.05, diffuseColor.g - diffuseColor.r);
-        float nv = (tn(vWP.xz * 0.33 + 7.0) - 0.5) * 0.16 + (tn(vWP.xz * 1.6) - 0.5) * 0.12 * (0.4 + 0.6 * fine) + (tn(vWP.xz * vec2(7.0, 2.2) + 3.0) - 0.5) * 0.1 * fine;
-        diffuseColor.rgb *= 1.0 + nv * mix(0.45, 1.0, green);
+        float fine = 1.0 - smoothstep(10.0, 30.0, camD);
+        diffuseColor.rgb *= 1.0 + (tn(vWP.xz * vec2(9.0, 3.0)) - 0.5) * 0.06 * fine;
         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(dot(diffuseColor.rgb, vec3(0.3, 0.59, 0.11))), 0.3 * uWet) * (1.0 - 0.25 * uWet);`);
   };
   m.customProgramCacheKey = () => 'terrain';

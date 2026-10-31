@@ -15,7 +15,7 @@ export const FISH_IDS = [
 const BASE = {
   L: 0.81, H: 0.25, up: 0.52, W: 0.1, pkT: 0.4, pkB: 0.44, pkW: 0.3, nT: 0.72, nB: 0.8, nW: 0.55,
   tT: 1, tB: 1, tW: 1, ped: 0.3, pedB: null, pedW: 0.34, my: 0, mt: 0.3, cT: 0, eU: 2, eL: 2, N: 9, S: 13, jv: 0.035, sg: 1, sj: 0.3, diag: 0, serr: 0.1,
-  grad: [-0.65, -0.25, 0.3, 0.75], jit: 0.08, pat: [], sat: 0.88,
+  grad: [-0.65, -0.25, 0.3, 0.75], jit: 0.03, pat: [], sat: 0.88,
   col: { back: '#4d6470', flank: '#cfd6da', belly: '#f0f1ee' },
   eye: { u: 0.072, yn: 0.25, r: 0.025, iris: '#f1efe6', pupil: '#0b0c0f', glow: 0 },
   mouth: { t: 'term', u: 0.032, y0: 0, y1: -0.15, w: 0.0034, h: 0.0028, col: '#2a2420' },
@@ -40,7 +40,7 @@ function resolve(id) {
   sp.id = id;
   sp.seed = FISH_IDS.indexOf(id) + 1;
   sp.col = { ...BASE.col, ...(raw.col || {}) };
-  sp.eye = { ...BASE.eye, ...(raw.eye || {}) };
+  sp.eye = { ...BASE.eye, ...(raw.eye || {}), ...(raw.eyeX || {}) };
   sp.mouth = raw.mouth === null ? null : { ...BASE.mouth, ...(raw.mouth || {}) };
   sp.gill = raw.gill === null ? null : { ...BASE.gill, ...(raw.gill || {}) };
   sp.fins = { ...BASE.fins, ...(raw.fins || {}) };
@@ -185,6 +185,35 @@ function paintBody(sp, f) {
   return c.multiplyScalar(1 + (hh(f.idx, 91, sp.seed) - 0.5) * sp.jit);
 }
 
+function paintVert(sp, f, yv) {
+  const fv = { ...f, yn: yv };
+  if (sp.paint) return sp.paint(sp, fv);
+  let c = gradient(sp, yv);
+  for (const p of sp.pat) c = applyPat(sp, p, c, p.t === 'tint' ? fv : f);
+  return c;
+}
+
+function finVC(sp, key, R, n) {
+  const alt = { D2: 'D', AD: 'D', Cl: 'C', A2: 'A' }[key];
+  const pair = sp.fc[key] || (alt && sp.fc[alt]) || defaultFc(sp, key);
+  const c0 = typeof pair[0] === 'string' ? H(pair[0]) : pair[0];
+  const c1 = typeof pair[1] === 'string' ? H(pair[1]) : pair[1];
+  const fp = sp.fp[key] || (key !== 'Cl' && alt && sp.fp[alt]) || {};
+  const edge = fp.edge ? mixC(c1, H(fp.edge[0]), fp.edge[2] ?? 1) : mixC(c1, H('#f6f3ea'), fp.light ?? 0.32);
+  const kc = key.charCodeAt(0);
+  return {
+    col: (r) => (r === 0 ? c0 : r >= R ? edge : c1),
+    mul: (r, j) => ((fp.rays ?? 0.1) && (j & 1) ? 1 - (fp.rays ?? 0.1) : 1) * (1 + (hh(j * 17 + r * 5 + 3, kc, sp.seed) - 0.5) * 0.03),
+    over: (r, j) => {
+      const sx = (j + 0.5) / n, rf = (r + 0.5) / R;
+      if (fp.spot && sx >= fp.spot[1] && rf >= fp.spot[2]) return H(fp.spot[0]);
+      if (fp.lead && j === 0) return mixC(c0, H(fp.lead), 0.85);
+      if (fp.dots && rf > 0.25 && hh(j * 7 + 3, r * 13 + 5, sp.seed * 31 + kc) < fp.dots[1]) return mixC(c1, H(fp.dots[0]), fp.dots[2] ?? 0.75);
+      return null;
+    },
+  };
+}
+
 function finShape(t, s, j, n, o) {
   switch (t) {
     case 'tri': return (j === 0 ? 0.9 : 1) * (1 - 0.82 * s);
@@ -258,7 +287,7 @@ function medianFin(ctx, key, spec) {
   const th = o.th ?? 0.0082;
   const thick = R === 1 ? [th, 0] : [th, th * 0.42, 0];
   const glow = o.glowFn || o.glow || 0;
-  finStrip(S, rows, thick, [0, 0, 1], (r, j) => (o.colFn ? o.colFn(r, j, R, n) : finCol(sp, key, (j + 0.5) / n, R === 1 ? 0.5 : (r === 0 ? 0.3 : 0.9), j, r)), glow, 1);
+  finStrip(S, rows, thick, [0, 0, 1], (r, j) => (o.colFn ? o.colFn(r, j, R, n) : finCol(sp, key, (j + 0.5) / n, R === 1 ? 0.5 : (r === 0 ? 0.3 : 0.9), j, r)), glow, 1, o.colFn ? null : finVC(sp, key, R, n));
   ctx.edges = ctx.edges || [];
   ctx.edges.push({ key, pts: rows[R], top });
 }
@@ -326,7 +355,9 @@ function caudal(ctx) {
     const c = finCol(sp, low ? 'Cl' : 'C', v, rf, j, r);
     return c;
   });
-  finStrip(S, [B, M, E], [thB, 0.0036, 0], [0, 0, 1], colFn, Cs.glowFn || Cs.glow || 0, 1);
+  const vU = finVC(sp, 'C', 2, m), vL = sp.fc.Cl ? finVC(sp, 'Cl', 2, m) : vU;
+  const vc = Cs.colFn ? null : { col: (r, j) => ((j / m) > lowSplit ? vL : vU).col(r, j), mul: (r, j) => vU.mul(r, j), over: (r, j) => vU.over(r, j) };
+  finStrip(S, [B, M, E], [thB, 0.0036, 0], [0, 0, 1], colFn, Cs.glowFn || Cs.glow || 0, 1, vc);
   ctx.edges = ctx.edges || [];
   ctx.edges.push({ key: 'C', pts: E, top: true });
 }
@@ -367,7 +398,7 @@ function pairedFin(ctx, key) {
       for (let r = 0; r <= R; r++) rows[r].push(vlerp(rp, tp, R === 2 ? [0, 0.66, 1][r] : r / R));
     }
     const thick = R === 1 ? [0.006, 0] : [0.006, 0.0026, 0];
-    finStrip(S, rows, thick, nrm, P.colFn || ((r, j) => finCol(sp, key, (j + 0.5) / m, R === 1 ? 0.5 : (r === 0 ? 0.3 : 0.9), j, r)), P.glow || 0, 1);
+    finStrip(S, rows, thick, nrm, P.colFn || ((r, j) => finCol(sp, key, (j + 0.5) / m, R === 1 ? 0.5 : (r === 0 ? 0.3 : 0.9), j, r)), P.glow || 0, 1, P.colFn ? null : finVC(sp, key, R, m));
   }
 }
 
@@ -382,10 +413,17 @@ function eyes(ctx) {
   for (const side of [1, -1]) {
     const at = ctx.surfAt(eu, E.yn, side);
     const n = norm(add(at.n, [0, 0, side * (E.out ?? 0.25)]));
-    dome(ctx.S, ctx.caster, at.p, n, r, {
-      rings: [[1, -0.08], [0.84, 0.1], [E.pf ?? 0.5, 0.21]], apex: 0.3, seg: 7, kind: 3,
-      cols: [rim, H(E.iris), H(E.pupil)], glows: [0, E.glow || 0, E.pglow ?? (E.glow || 0)],
-    });
+    const pf = E.pf ?? 0.5;
+    const rings = E.ring2 ? [[1, -0.08], [0.84, 0.1], [lerp(0.84, pf, 0.5), 0.16], [pf, 0.21]] : [[1, -0.08], [0.84, 0.1], [pf, 0.21]];
+    const g = E.glow || 0, pg = E.pglow ?? g;
+    const pupilCol = E.slit ? H(E.iris) : H(E.pupil);
+    const cols = E.ring2 ? [rim, H(E.iris), H(E.ring2), pupilCol] : [rim, H(E.iris), pupilCol];
+    const glows = E.ring2 ? [0, g, g, E.slit ? g : pg] : [0, g, E.slit ? g : pg];
+    dome(ctx.S, ctx.caster, at.p, n, r, { rings, apex: 0.3, seg: E.seg ?? 8, stretch: E.st ?? 1, rot: E.rot ?? 0, kind: 3, cols, glows });
+    if (E.slit) {
+      const q = madd(at.p, n, 0.29 * r);
+      dome(ctx.S, null, q, n, r * pf * 1.15, { seg: 6, stretch: 0.32, rings: [[1, -0.15]], apex: 0.35, cols: [H(E.pupil)], glows: [pg], kind: 3 });
+    }
     if (E.spark !== false) {
       const [t1, t2] = basis(n);
       const q = madd(madd(madd(at.p, n, 0.3 * r), t2, 0.2 * r), t1, 0.14 * r * (E.u < 0.5 ? 1 : 1));
@@ -572,10 +610,15 @@ function buildBody(ctx) {
     const u = 0.5 - cx, pr = prof(u);
     const yn = clamp((cy - pr.c) / (cy >= pr.c ? pr.ht : pr.hb), -1, 1);
     const f = { u, yn, side: cz >= 0 ? 1 : -1, idx: idx++, x: cx, y: cy, z: cz, ...info };
-    let col = paintBody(sp, f);
-    if (info.mul) col = col.multiplyScalar(info.mul);
-    if (info.net) col = mixC(col, H(info.net[0]), info.net[1]);
-    S.tri(a, b, c, col, sp.glowFn ? sp.glowFn(f) : 0, want, 0);
+    const jit = 1 + (hh(f.idx, 91, sp.seed) - 0.5) * sp.jit;
+    const vcol = (p) => {
+      const pv = prof(clamp(0.5 - p[0], 0, sp.L));
+      const yv = clamp((p[1] - pv.c) / (p[1] >= pv.c ? pv.ht : pv.hb), -1, 1);
+      let c = paintVert(sp, f, yv).multiplyScalar(jit * (info.mul || 1));
+      if (info.net) c = mixC(c, H(info.net[0]), info.net[1]);
+      return c;
+    };
+    S.triC(a, b, c, vcol(a), vcol(b), vcol(c), sp.glowFn ? sp.glowFn(f) : 0, want, 0);
   };
   const r0 = rings[0];
   for (let k = 0; k < N; k++) {

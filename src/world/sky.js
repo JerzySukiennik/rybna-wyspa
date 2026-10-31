@@ -71,7 +71,7 @@ void main() {
 }`;
 
 const C = (h) => new THREE.Color(h);
-const DAY = { top: C('#5a8fc8'), hor: C('#c9d9e3'), sun: C('#ffe8c8'), hemiSky: C('#bfd3f0'), hemiGround: C('#55603a') };
+const DAY = { top: C('#4f88c6'), hor: C('#bcd2e2'), sun: C('#ffe0b0'), hemiSky: C('#a9c6e8'), hemiGround: C('#56663a') };
 const DUSK = { top: C('#4a5d96'), hor: C('#e9b48c'), sun: C('#ffb070'), hemiSky: C('#e6c4aa'), hemiGround: C('#5a4a3c') };
 const NIGHT = { top: C('#0a1326'), hor: C('#1b2840'), sun: C('#a9bcff'), hemiSky: C('#33466c'), hemiGround: C('#151a20') };
 const GREY = { top: C('#7f8b96'), hor: C('#b7bfc6'), sun: C('#dfe4ea'), hemiSky: C('#c3cbd0'), hemiGround: C('#5b5f55') };
@@ -125,22 +125,32 @@ export class Sky {
     const r = rng(77);
     const parts = [];
     const base = new THREE.IcosahedronGeometry(1, 1);
-    for (let i = 0; i < 6; i++) {
+    const blobs = [[0, 0.35, 0, 1.25], [1.3, 0.2, 0.2, 1.0], [-1.25, 0.15, -0.1, 1.0], [0.5, 0.85, 0.1, 0.9], [-0.6, 0.7, 0.2, 0.85], [2.3, 0.02, 0.3, 0.7], [-2.2, 0.0, 0.1, 0.72], [0.2, 0.12, 0.9, 0.82], [0.0, 0.1, -0.9, 0.8]];
+    for (const [x, y, z, k] of blobs) {
       const g = base.clone();
-      const k = 1 - Math.abs(i - 2.5) * 0.2;
-      g.scale(k * (1.2 + r() * 0.4), k * (0.75 + r() * 0.3), k * (1 + r() * 0.3));
-      g.translate((i - 2.5) * 1.0 + r() * 0.3, k * 0.3 + r() * 0.15, (r() - 0.5) * 0.7);
+      g.scale(k * 1.2, k * 0.95, k);
+      g.translate(x, y, z);
       const pa = g.attributes.position;
-      for (let v = 0; v < pa.count; v++) if (pa.getY(v) < 0) pa.setY(v, pa.getY(v) * 0.25);
+      for (let v = 0; v < pa.count; v++) if (pa.getY(v) < 0) pa.setY(v, pa.getY(v) * 0.22);
       parts.push(g.index ? g.toNonIndexed() : g);
     }
     const merged = mergeSimple(parts);
+    const pa = merged.attributes.position;
+    const col = new Float32Array(pa.count * 3);
+    const lo = new THREE.Color('#c8c6d6'), hi = new THREE.Color('#ffffff'), c = new THREE.Color();
+    for (let v = 0; v < pa.count; v++) {
+      const t = Math.min(1, Math.max(0, (pa.getY(v) + 0.1) / 1.2));
+      c.copy(lo).lerp(hi, t * t * (3 - 2 * t));
+      col[v * 3] = c.r; col[v * 3 + 1] = c.g; col[v * 3 + 2] = c.b;
+    }
+    merged.setAttribute('color', new THREE.BufferAttribute(col, 3));
     merged.computeVertexNormals();
-    const mesh = new THREE.InstancedMesh(merged, new THREE.MeshLambertMaterial({ color: '#ffffff', flatShading: true, emissive: '#5c6a7a', emissiveIntensity: 0.35, fog: false }), 40);
+    const n = 22;
+    const mesh = new THREE.InstancedMesh(merged, new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, emissive: '#5c6a7a', emissiveIntensity: 0.35, fog: false }), n);
     this.cloudData = [];
-    for (let i = 0; i < 40; i++) {
-      const a = r() * Math.PI * 2, d = 420 + r() * 900;
-      this.cloudData.push({ a, d, y: 170 + r() * 90, sc: 10 + r() * 16, rot: r() * Math.PI * 2, sp: 0.6 + r() * 0.8 });
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + (r() - 0.5) * 0.5, d = 520 + r() * 800;
+      this.cloudData.push({ a, d, y: 190 + r() * 80, sc: 17 + r() * 16, rot: r() * Math.PI * 2, sp: 0.6 + r() * 0.8 });
     }
     mesh.frustumCulled = false;
     return mesh;
@@ -171,7 +181,7 @@ export class Sky {
     else sunA = Math.PI + ((phase - NIGHT_FROM) / (1 - NIGHT_FROM)) * Math.PI;
     const dayK = clamp(Math.sin(sunA) * 3.2 + 0.25, 0, 1);
     const duskK = clamp(1 - Math.abs(Math.sin(sunA)) * 3.0, 0, 1) * (night ? 0.4 : 1);
-    const sunDir = new THREE.Vector3(Math.cos(sunA) * Math.cos(0.5), Math.sin(sunA) * 0.6, Math.cos(sunA) * Math.sin(0.5) + 0.55).normalize();
+    const sunDir = new THREE.Vector3(Math.cos(sunA) * Math.cos(0.5), Math.sin(sunA) * 0.46, Math.cos(sunA) * Math.sin(0.5) + 0.55).normalize();
     const nk = night ? (phase - NIGHT_FROM) / (1 - NIGHT_FROM) : 0;
     const mAz = -0.35 + nk * 0.9, mEl = 0.22 + Math.sin(nk * Math.PI) * 0.14;
     const moonDir = new THREE.Vector3(Math.cos(mAz) * Math.cos(mEl), Math.sin(mEl), Math.sin(mAz) * Math.cos(mEl));
@@ -219,7 +229,7 @@ export class Sky {
     L.wave = w.wave;
     L.rain = w.rain;
     L.wet = clamp(w.rain * 1.2, 0, 1);
-    L.lampK = clamp((1 - dayK) * 1.3 + grey * 0.45 - 0.2, 0, 1);
+    L.lampK = clamp(Math.max((1 - dayK) * 1.3 - 0.2, w.fog * 0.95, w.rain * 0.8, grey * 0.45), 0, 1);
     L.moonDir.copy(moonDir);
     L.moonK = (1 - dayK) * (0.45 + w.moon * 0.55) * (1 - grey * 0.85);
     const wk = 1 - dayK;

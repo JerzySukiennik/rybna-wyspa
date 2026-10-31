@@ -30,6 +30,7 @@ const SUM = {
   special: (ctx) => eelFin(ctx, { u0: 0.83, u1: 0.41, hTop: 0.022, hBot: 0.042, hEnd: 0.06, nTop: 4, nBot: 13, th: 0.008 }),
   fc: { D: ['#30322a', '#3e4032'], A: ['#3e4030', '#32342a'], C: ['#2e3024', '#3c3e30'], P: ['#2e3024', '#40422e'], V: ['#5a5a4a', '#8a8a76'] },
   gill: { u: 0.17, k: 0.015, y0: 0.2, y1: -0.8 }, N: 10, jv: 0.03,
+  eyeX: { seg: 6, pf: 0.5 },
 };
 
 const ZLOTY = {
@@ -85,6 +86,7 @@ export const SPECS = {
     H: 0.175,
     up: 0.42,
     pkB: 0.36,
+    eyeX: { seg: 9, pf: 0.48 },
   },
   ploc: {
     H: 0.27,
@@ -105,6 +107,7 @@ export const SPECS = {
     jv: 0.04,
     diag: 2,
     gill: { u: 0.19 },
+    eyeX: { seg: 8, pf: 0.42, ring2: '#f0a640' },
   },
   kielb: {
     H: 0.185,
@@ -138,6 +141,7 @@ export const SPECS = {
     bumps: [[0.012, 0.012, 0, -0.006]],
     mouth: { t: 'under', u: 0.034, ang: 50, w: 0.004, bk: 0.01 },
     gill: { u: 0.18 },
+    eyeX: { seg: 7, st: 1.12, pf: 0.5 },
   },
   jazgarz: {
     H: 0.25,
@@ -160,6 +164,7 @@ export const SPECS = {
     N: 9,
     jv: 0.06,
     gill: { u: 0.24, k: 0.03 },
+    eyeX: { seg: 10, pf: 0.56, ring2: '#c4b8e0' },
   },
   okon: {
     H: 0.28,
@@ -179,12 +184,13 @@ export const SPECS = {
     pat: [{ t: 'bars', n: 6, u0: 0.24, u1: 0.76, w: 0.5, ymin: -0.5, col: '#25301a', a: 0.92, taper: 0.4 }],
     eye: { u: 0.076, yn: 0.25, r: 0.027, iris: '#e2a428' },
     mouth: { u: 0.042, y0: -0.02, y1: -0.2 },
-    fins: { D: [0.3, 0.53, 0.115, 'spiny', 0.25, { n: 13, rows: 1 }], D2: [0.55, 0.69, 0.08, 'convex', 0.4], A: [0.63, 0.71, 0.065, 'tri'], P: { u: 0.22, yn: -0.4, len: 0.085, shape: 'round', root: 0.02, rows: 1 }, V: { u: 0.27, yn: -0.85, len: 0.085 }, C: { t: 'fork', S: 0.115, F: 0.3 } },
+    fins: { D: [0.3, 0.53, 0.115, 'spiny', 0.25, { n: 11, rows: 1 }], D2: [0.55, 0.69, 0.08, 'convex', 0.4], A: [0.63, 0.71, 0.065, 'tri'], P: { u: 0.22, yn: -0.4, len: 0.085, shape: 'round', root: 0.02, rows: 1 }, V: { u: 0.27, yn: -0.85, len: 0.085 }, C: { t: 'fork', S: 0.115, F: 0.3 } },
     fc: { D: ['#7c8260', '#a4a688'], D2: ['#a2a268', '#c2be88'], A: ['#e2542a', '#ee7a44'], V: ['#e2542a', '#ee7a44'], P: ['#b4a45c', '#c4b46c'], C: ['#787846', '#9e8e58'], Cl: ['#d2663a', '#e28850'] },
     fp: { D: { spot: ['#121210', 0.68, 0], rays: 0.12 } },
     N: 10,
     diag: 2,
     gill: { u: 0.22, k: 0.035 },
+    eyeX: { seg: 8, pf: 0.46, iris: '#e6a62c' },
   },
   krap: {
     H: 0.34,
@@ -207,6 +213,7 @@ export const SPECS = {
     jv: 0.03,
     sg: 1.15,
     gill: { u: 0.17 },
+    eyeX: { seg: 10, pf: 0.54 },
   },
   leszcz: {
     H: 0.39,
@@ -234,6 +241,7 @@ export const SPECS = {
     mouth: null,
     lips: { u: 0.012, ang: 0.85, len: 0.024, r: 0.012, dx: 0.45, dy: -0.85, col: '#b89a72' },
     gill: { u: 0.17 },
+    eyeX: { seg: 8, st: 1.16, pf: 0.42 },
   },
   wzdrega: {
     H: 0.3,
@@ -258,6 +266,7 @@ export const SPECS = {
     diag: 2,
     jaw: { u: 0.042, dx: 0.006, dy: 0.016, r: 0.0105, sag: 0.002 },
     gill: { u: 0.18 },
+    eyeX: { seg: 8, pf: 0.44, iris: '#e86a2a', ring2: '#f2c45a' },
   },
   karas: {
     H: 0.4,
@@ -281,6 +290,7 @@ export const SPECS = {
     jv: 0.045,
     sg: 0.95,
     gill: { u: 0.19 },
+    eyeX: { seg: 7, pf: 0.46, iris: '#d8b04a' },
   },
   jelec: {
     W: 0.085,
@@ -304,6 +314,7 @@ export const SPECS = {
     gill: { u: 0.165 },
     H: 0.205,
     up: 0.5,
+    eyeX: { seg: 8, pf: 0.5, iris: '#f2ecc4' },
   },
   klen: {
     H: 0.23,
@@ -328,6 +339,7 @@ export const SPECS = {
     jv: 0.02,
     headSt: [0.012, 0.035, 0.06],
     gill: { u: 0.23 },
+    eyeX: { seg: 8, pf: 0.48, iris: '#d6be78' },
   },
   lin: {
     H: 0.25,
@@ -359,6 +371,7 @@ export const SPECS = {
     diag: 2,
     lips: { u: 0.008, ang: 0.62, len: 0.012, r: 0.0125, dx: 1, dy: -0.25, col: '#7c8040' },
     gill: { u: 0.2 },
+    eyeX: { seg: 7, pf: 0.38, iris: '#e05428' },
   },
   piskorz: {
     L: 0.9,
@@ -399,6 +412,7 @@ export const SPECS = {
     jv: 0.03,
     gill: { u: 0.11, k: 0.012 },
     N: 10,
+    eyeX: { seg: 6, pf: 0.55 },
   },
   jaz: {
     H: 0.28,
@@ -420,6 +434,7 @@ export const SPECS = {
     sg: 1.05,
     diag: 1,
     gill: { u: 0.17 },
+    eyeX: { seg: 9, pf: 0.46, iris: '#efd47a' },
   },
   karp: {
     H: 0.3,
@@ -447,6 +462,7 @@ export const SPECS = {
     jv: 0.025,
     lips: { u: 0.012, ang: 0.82, len: 0.02, r: 0.014, dx: 0.6, dy: -0.6, col: '#b8925c' },
     gill: { u: 0.2, k: 0.025 },
+    eyeX: { seg: 8, pf: 0.44, iris: '#d6ac4a', ring2: '#f0d488' },
   },
   bolen: {
     W: 0.085,
@@ -475,6 +491,7 @@ export const SPECS = {
     H: 0.2,
     up: 0.54,
     nB: 0.8,
+    eyeX: { seg: 9, st: 1.12, pf: 0.46 },
   },
   brzana: {
     H: 0.19,
@@ -506,6 +523,7 @@ export const SPECS = {
     bumps: [[0.02, 0.02, 0, -0.006]],
     lips: { u: 0.034, ang: 1, len: 0.012, r: 0.011, dx: 0.25, dy: -1, col: '#d0aa80' },
     gill: { u: 0.22 },
+    eyeX: { seg: 7, pf: 0.48, iris: '#d4b46c' },
   },
   certa: {
     up: 0.53,
@@ -532,6 +550,7 @@ export const SPECS = {
     gill: { u: 0.19 },
     H: 0.245,
     bumps: [[0.015, 0.014, 0.009, -0.009], [0.27, 0.09, 0.026, 0]],
+    eyeX: { seg: 8, pf: 0.5, iris: '#eae6da' },
   },
   amur: {
     H: 0.21,
@@ -555,6 +574,7 @@ export const SPECS = {
     fc: { D: ['#5c5e4e', '#7a7c68'], C: ['#5c5e4e', '#7a7c68'], A: ['#7a7a66', '#94947e'], P: ['#7a7a66', '#94947e'], V: ['#7a7a66', '#94947e'] },
     jv: 0.02,
     gill: { u: 0.2 },
+    eyeX: { seg: 7, pf: 0.44, iris: '#d8c070' },
   },
   sandacz: {
     H: 0.19,
@@ -586,6 +606,7 @@ export const SPECS = {
     jv: 0.04,
     diag: 2,
     gill: { u: 0.24, k: 0.03 },
+    eyeX: { seg: 10, pf: 0.6, iris: '#dfe6da', pupil: '#3e4a46' },
   },
   szczupak: {
     L: 0.84,
@@ -617,6 +638,7 @@ export const SPECS = {
     diag: 1,
     jaw: { u: 0.13, dx: 0.008, dy: -0.006, r: 0.012, sag: 0.003 },
     gill: { u: 0.27, k: 0.03 },
+    eyeX: { seg: 8, st: 1.22, pf: 0.44, iris: '#e6bc3a', ring2: '#f6dc84' },
   },
   mietus: {
     L: 0.88,
@@ -652,6 +674,7 @@ export const SPECS = {
     jv: 0.05,
     diag: 2,
     gill: { u: 0.15, k: 0.018 },
+    eyeX: { seg: 6, pf: 0.5 },
   },
   wegorz: {
     L: 0.97,
@@ -683,6 +706,7 @@ export const SPECS = {
     nB: 0.5,
     nW: 0.42,
     bumps: [[0.06, 0.035, 0.004, 0.003, 0.003]],
+    eyeX: { seg: 6, pf: 0.55 },
   },
   troc: {
     H: 0.215,
@@ -709,6 +733,7 @@ export const SPECS = {
     nW: 0.42,
     bumps: [[0.035, 0.03, 0.004, 0.006, 0.006]],
     gill: { u: 0.2 },
+    eyeX: { seg: 9, pf: 0.48, iris: '#eef0ec' },
   },
   pstrag: {
     H: 0.25,
@@ -738,6 +763,7 @@ export const SPECS = {
     bumps: [[0.12, 0.06, 0.006, 0.006]],
     jaw: { u: 0.075, dx: 0.003, dy: -0.01, r: 0.0105, sag: 0.002 },
     gill: { u: 0.24 },
+    eyeX: { seg: 8, pf: 0.46, ring2: '#ecc25a' },
   },
   sum: SUM,
   losos: {
@@ -766,6 +792,7 @@ export const SPECS = {
     headSt: [0.01, 0.03, 0.055],
     bumps: [[0.3, 0.1, 0.022, 0]],
     gill: { u: 0.18 },
+    eyeX: { seg: 8, st: 1.1, pf: 0.5, iris: '#e8ecec' },
   },
   jesiotr: {
     L: 0.8,
@@ -804,6 +831,7 @@ export const SPECS = {
       ventral: { n: 7, u0: 0.24, u1: 0.54, yn: -0.72, r: 0.01 },
     }),
     lips: { u: 0.12, ang: 1, len: 0.016, r: 0.01, dx: 0.1, dy: -1, col: '#c8bca4' },
+    eyeX: { seg: 7, pf: 0.5 },
   },
   rakieta: {
     L: 0.832,
@@ -821,6 +849,7 @@ export const SPECS = {
     fins: { D: null, A: null, V: null, C: { t: 'none' }, P: { u: 0.3, yn: -0.35, len: 0.055, shape: 'round' } },
     fc: { P: ['#1c1c20', '#2c2c32'] },
     special: rocket,
+    eyeX: { seg: 10, pf: 0.46 },
   },
   ognista: {
     H: 0.27,
@@ -845,6 +874,7 @@ export const SPECS = {
       P: { u: 0.21, yn: -0.45, len: 0.1, shape: 'flame', m: 4, colFn: (r, j) => fireRamp(0.45 + 0.2 * hh(j, 4, 8)), glow: 0.7 },
       V: { u: 0.44, yn: -0.85, len: 0.085, shape: 'flame', m: 4, colFn: (r, j) => fireRamp(0.4 + 0.2 * hh(j, 6, 8)), glow: 0.65 },
     },
+    eyeX: { seg: 9, pf: 0.42 },
   },
   wydrukowana: {
     L: 0.8,
@@ -888,6 +918,7 @@ export const SPECS = {
     fc: { D: ['#121c36', '#1c2a4c'], C: ['#121c36', '#1c2a4c'], A: ['#16203c', '#202e52'], P: ['#16203c', '#202e52'], V: ['#16203c', '#202e52'] },
     fp: { D: { rays: 0.15 }, C: { rays: 0.15 } },
     special: (ctx) => gmicroNet(ctx, { walks: 5, steps: 6 }),
+    eyeX: { seg: 6, pf: 0.42 },
   },
   zloty_sum: ZLOTY,
   potwor: {
@@ -923,6 +954,7 @@ export const SPECS = {
     },
     fc: { D: ['#1a2416', '#6a7a4e'], A: ['#1a2416', '#5a6a42'], C: ['#141e12', '#2a3a22'], P: ['#1a2416', '#3a4a2c'], V: ['#1a2416', '#3a4a2c'] },
     special: monster,
+    eyeX: { seg: 10, pf: 0.5, slit: true },
   },
 };
 

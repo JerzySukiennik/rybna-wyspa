@@ -90,6 +90,16 @@ export function buildDecor(scene, phys, models, mat, blockMat) {
     else if (s > 2 && s < 4 && Math.hypot(x, z) > KEEP_CLEAR && r() < 0.01) add(r() < 0.5 ? 'log' : 'stump', x, z, 1, r() * 6.28);
   }
 
+  let bestA = 0, bestB = -1;
+  for (let i = 0; i < 64; i++) {
+    const a = (i / 64) * Math.PI * 2;
+    const w = coastPoint(a, 0.6);
+    const b = beachiness(w.x, w.z) - (Math.sin(a) < 0 ? 0.5 : 0);
+    if (b > bestB) { bestB = b; bestA = a; }
+  }
+  const bp = coastPoint(bestA, 0.9);
+  add('boat', bp.x, bp.z, 1, -bestA + Math.PI / 2 + 0.3, islandHeight(bp.x, bp.z) + 0.05);
+
   let pz = -12;
   while (coastDist(SPOTS.pier.x, pz) > 0.5 && pz > -60) pz -= 0.5;
   for (let k = 0; k < 3; k++) add('pier', SPOTS.pier.x, pz - 1.5 - k * 4, 1, 0, 1.0);

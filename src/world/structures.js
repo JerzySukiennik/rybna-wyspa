@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { Geo } from '../render/geo.js';
 import { funnelColliders, COLORS as K } from '../blocks/defs.js';
-import { SPOTS, LAND } from './island.js';
+import { SPOTS, LAND, islandHeight } from './island.js';
 import { G, groups } from '../sim/physics.js';
 
 export const SELL_R = 1.9;
@@ -101,17 +101,17 @@ export function buildStructures(scene, phys, mat, models) {
   hopper(g);
   deck(g);
   const { bx, bz } = booth(g, out.lamps);
-  const sellMesh = new THREE.Mesh(g.geometry(), mat);
+  const sellMesh = new THREE.Mesh(g.geometry({ ao: 0.35 }), mat);
   sellMesh.position.copy(SPOTS.sell);
   sellMesh.receiveShadow = true;
   sellMesh.castShadow = true;
   scene.add(sellMesh);
   for (const p of out.lamps) p.add(SPOTS.sell);
-  const skupSign = textPlane('SKUP RYB', 2.3, 0.5, { bg: '#f5eedd', ink: '#1f2d4a', size: 92 });
+  const skupSign = textPlane('SKUP RYB', 2.3, 0.5, { bg: '#e6d9bc', ink: '#24324f', size: 92, painted: true });
   skupSign.position.set(bx - 0.145, 3.07, bz);
   skupSign.rotation.y = -Math.PI / 2;
   sellMesh.add(skupSign);
-  const skupBack = textPlane('SKUP RYB', 2.3, 0.5, { bg: '#f5eedd', ink: '#1f2d4a', size: 92 });
+  const skupBack = textPlane('SKUP RYB', 2.3, 0.5, { bg: '#e6d9bc', ink: '#24324f', size: 92, painted: true });
   skupBack.position.set(bx - 0.055, 3.07, bz);
   skupBack.rotation.y = Math.PI / 2;
   sellMesh.add(skupBack);
@@ -151,11 +151,14 @@ export function buildStructures(scene, phys, mat, models) {
   const pv = (base, i) => '#' + plank.set(base).offsetHSL(0, 0, (Math.sin(i * 12.9898) * 43758.5453 % 1) * 0.08 - 0.04).getHexString();
   for (let i = 0; i < 9; i++) s.box(-W / 2 - 0.4 + (i + 0.5) * ((W + 0.8) / 9), 0.185, 0, (W + 0.8) / 9 - 0.03, 0.01, D + 0.9, pv(i % 2 ? K.wood : K.woodL, i));
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) s.box(sx * (W / 2 - 0.1), 1.5, sz * (D / 2 - 0.1), 0.18, 2.7, 0.18, K.woodD);
-  s.box(-W / 2 + 0.1, 1.5, 0.15, 0.1, 2.7, D - 0.5, K.plank, { side: K.woodL });
-  s.box(W / 2 - 0.1, 1.5, 0.15, 0.1, 2.7, D - 0.5, K.plank, { side: K.woodL });
-  s.box(0, 1.5, D / 2 - 0.1, W - 0.3, 2.7, 0.1, K.plank);
-  for (let i = 0; i < 10; i++) s.box(-W / 2 + 0.35 + i * ((W - 0.7) / 9), 1.5, D / 2 - 0.16, 0.02, 2.66, 0.01, K.woodD);
-  for (const sx of [-1, 1]) for (let i = 0; i < 6; i++) s.box(sx * (W / 2 - 0.16), 1.5, -D / 2 + 0.75 + i * 0.36, 0.01, 2.66, 0.02, K.woodD);
+  const tones = ['#9c7a52', '#8a6a46', '#a8865c', '#957450'];
+  const tone = (i) => tones[(i * 7 + (i >> 1)) % tones.length];
+  for (const sx of [-1, 1]) {
+    const n = 14, len = D - 0.5;
+    for (let i = 0; i < n; i++) s.box(sx * (W / 2 - 0.1), 1.5, -len / 2 + 0.15 + (i + 0.5) * (len / n), 0.1, 2.7, len / n - 0.012, tone(i + (sx > 0 ? 3 : 0)), { side: K.woodD });
+  }
+  for (let i = 0; i < 22; i++) s.box(-(W - 0.3) / 2 + (i + 0.5) * ((W - 0.3) / 22), 1.5, D / 2 - 0.1, (W - 0.3) / 22 - 0.012, 2.7, 0.1, tone(i + 5), { side: K.woodD });
+  s.box(0, 1.5, D / 2 - 0.04, W - 0.3, 2.7, 0.02, '#4a3a28');
   s.box(-1.05, 1.72, D / 2 - 0.17, 1.05, 0.72, 0.03, '#26302b');
   s.box(-1.05, 1.72, D / 2 - 0.155, 1.15, 0.82, 0.02, '#6f5536');
   for (let i = 0; i < 4; i++) s.box(-1.12 + (i % 2) * 0.12, 1.62 - i * 0.11, D / 2 - 0.19, 0.6 - (i % 2) * 0.2, 0.025, 0.005, '#d9d4c4');
@@ -192,6 +195,8 @@ export function buildStructures(scene, phys, mat, models) {
   const rh = 2.85, ridge = 4.15, ov = 0.45;
   for (const sz of [-1, 1]) s.quadN([-W / 2 - ov, rh, sz * (D / 2 + ov)], [W / 2 + ov, rh, sz * (D / 2 + ov)], [W / 2 + ov, ridge, 0], [-W / 2 - ov, ridge, 0], [0, 1, sz], '#4b5e52');
   for (const sz of [-1, 1]) s.quadN([-W / 2 - ov, rh - 0.12, sz * (D / 2 + ov)], [W / 2 + ov, rh - 0.12, sz * (D / 2 + ov)], [W / 2 + ov, ridge - 0.12, 0], [-W / 2 - ov, ridge - 0.12, 0], [0, -1, -sz], K.woodD);
+  s.box(1.3, 3.55, 0.75, 0.32, 0.9, 0.32, '#8a4c3a', { top: '#5d3a2e' });
+  s.box(1.3, 4.0, 0.75, 0.4, 0.08, 0.4, '#6b3d30');
   for (const sz of [-1, 1]) for (let k = 0; k < 6; k++) {
     const t = (k + 0.5) / 6;
     const y = rh + (ridge - rh) * t, zz = sz * (D / 2 + ov) * (1 - t);
@@ -199,6 +204,8 @@ export function buildStructures(scene, phys, mat, models) {
   }
   for (const sx of [-1, 1]) s.triN([sx * (W / 2 - 0.05), rh, -D / 2], [sx * (W / 2 - 0.05), rh, D / 2], [sx * (W / 2 - 0.05), ridge - 0.1, 0], [sx, 0, 0], K.plank);
   s.box(0, ridge + 0.04, 0, W + ov * 2 + 0.1, 0.12, 0.16, K.woodD);
+  for (const sz of [-1, 1]) s.box(0, rh - 0.07, sz * (D / 2 + ov), W + ov * 2 + 0.06, 0.14, 0.05, K.woodD);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) s.line([sx * (W / 2 + ov + 0.02), rh - 0.06, sz * (D / 2 + ov)], [sx * (W / 2 + ov + 0.02), ridge - 0.02, 0], 0.045, K.woodD, 4);
   s.box(0, rh - 0.18, -D / 2 + 0.02, 3.75, 0.78, 0.1, K.woodD);
   for (const [x, zz] of [[W / 2 + 0.25, -D / 2 - 0.1], [W / 2 + 0.25, -D / 2 + 0.55], [-W / 2 - 0.3, D / 2 - 0.2]]) {
     s.cyl(x, 0.18, zz, 0.27, 0.3, 0.55, 9, '#8a5c34', { top: '#6a4528' });
@@ -215,7 +222,7 @@ export function buildStructures(scene, phys, mat, models) {
     s.torus(-W / 2 + dx, 2.06, -D / 2 + 0.1, 0.035, 0.01, 8, 3, IRON);
   }
   const shopLamp = lantern(s, W / 2 + 0.6, 0.0, -D / 2 + 0.35, 2.5, 0.45, Math.PI);
-  const shopMesh = new THREE.Mesh(s.geometry(), mat);
+  const shopMesh = new THREE.Mesh(s.geometry({ ao: 0.6 }), mat);
   shopMesh.position.copy(SPOTS.shop);
   shopMesh.quaternion.copy(sq);
   shopMesh.castShadow = true;
@@ -240,7 +247,7 @@ export function buildStructures(scene, phys, mat, models) {
       }
     });
   }
-  const shopSign = textPlane('SKLEP RYBACKI', 3.45, 0.62, { bg: '#f5eedd', ink: '#1f2d4a', size: 92 });
+  const shopSign = textPlane('SKLEP RYBACKI', 3.45, 0.62, { bg: '#e6d9bc', ink: '#24324f', size: 92, painted: true });
   shopSign.position.set(0, rh - 0.18, -D / 2 - 0.035);
   shopSign.rotation.y = Math.PI;
   shopMesh.add(shopSign);
@@ -256,8 +263,43 @@ export function buildStructures(scene, phys, mat, models) {
   box(0.3, 0.5, 0.3, -W / 2 - 0.35, 0.5, -D / 2 + 0.1);
   const front = new THREE.Vector3(0, 1.1, -D / 2 - 0.7).applyQuaternion(sq).add(SPOTS.shop);
   out.blobs.push({ x: SPOTS.shop.x, y: SPOTS.shop.y, z: SPOTS.shop.z, w: W + 0.8, l: D + 0.9, yaw: YAW });
+  out.chimney = new THREE.Vector3(1.3, 4.25, 0.75).applyQuaternion(sq).add(SPOTS.shop);
   out.blobs.push({ x: SPOTS.sell.x + bx, y: SPOTS.sell.y + 0.12, z: SPOTS.sell.z + bz, w: 1.9, l: 2.3 });
   out.shop = { pos: front, mesh: shopMesh };
+
+  const rackG = new Geo();
+  for (const sx of [-1, 1]) rackG.cyl(sx * 1.1, -0.3, 0, 0.06, 0.05, 2.4, 6, K.woodD);
+  rackG.line([-1.2, 2.0, 0], [1.2, 2.0, 0], 0.04, K.woodD, 6);
+  for (let i = 0; i <= 10; i++) {
+    const x = -1.0 + i * 0.2, sag = Math.sin((i / 10) * Math.PI) * 0.35;
+    rackG.line([x, 2.0, 0], [x, 0.9 - sag * 0.5, sag], 0.008, K.net, 3);
+  }
+  for (let j = 1; j <= 5; j++) {
+    const y = 2.0 - j * 0.2;
+    rackG.line([-1.0, y, Math.sin(j / 5) * 0.12], [1.0, y, Math.sin(j / 5) * 0.12], 0.007, K.net, 3);
+  }
+  for (let i = 0; i < 6; i++) rackG.cyl(-0.85 + i * 0.34, 1.92, 0, 0.05, 0.05, 0.09, 6, K.float);
+  const rackM = new THREE.Mesh(rackG.geometry(), mat);
+  rackM.position.set(-3.2, islandHeight(-3.2, -18.6), -18.6);
+  rackM.rotation.y = 0.25;
+  rackM.castShadow = true;
+  scene.add(rackM);
+  const props = new Geo();
+  const bxs = SPOTS.sell.clone().add(new THREE.Vector3(SELL_R + 3.5, 0, 2.3));
+  bxs.y = 0;
+  props.box(bxs.x, 0.27, bxs.z, 0.55, 0.54, 0.45, K.crate, { top: K.woodL });
+  props.box(bxs.x + 0.6, 0.27, bxs.z + 0.05, 0.55, 0.54, 0.45, K.crateD, { top: K.crate });
+  props.box(bxs.x + 0.3, 0.8, bxs.z, 0.5, 0.5, 0.42, K.crate, { top: K.woodL });
+  for (const [dx, dz] of [[-0.6, 0.6], [-0.05, 0.75]]) {
+    props.cyl(bxs.x + dx, 0, bxs.z + dz, 0.25, 0.27, 0.62, 9, '#7d5534', { top: '#5d3e26' });
+    props.ring(bxs.x + dx, 0.45, bxs.z + dz, 0.27, 0.29, 0.05, 9, '#3a3f45');
+  }
+  const pm = new THREE.Mesh(props.geometry(), mat);
+  pm.position.set(0, LAND, 0);
+  pm.castShadow = true;
+  pm.receiveShadow = true;
+  scene.add(pm);
+  out.blobs.push({ x: bxs.x + 0.2, y: LAND, z: bxs.z + 0.3, w: 1.6, l: 1.3 });
 
   const post = new Geo();
   post.box(0, 1.75, 0, 0.18, 3.5, 0.18, K.woodD);
@@ -279,7 +321,7 @@ export function buildStructures(scene, phys, mat, models) {
     bm.castShadow = true;
     gr.add(bm);
     for (const side of [1, -1]) {
-      const t = textPlane(text, 1.75, 0.46, { bg: '#e6c99a', ink: '#1f2d4a', size: 78 });
+      const t = textPlane(text, 1.75, 0.46, { bg: '#dcc59a', ink: '#2a2a2a', size: 78, painted: true, frame: false });
       t.position.set(1.08, 0, side * 0.047);
       if (side < 0) t.rotation.y = Math.PI;
       gr.add(t);
@@ -304,11 +346,15 @@ export function textPlane(text, w, h, o = {}) {
   tex.anisotropy = 4;
   const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshLambertMaterial({ map: tex }));
   m.castShadow = false;
+  const seed = [...text].reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7) >>> 0;
   const draw = () => {
+    let rs = seed;
+    const rnd = () => { rs = (rs * 1664525 + 1013904223) >>> 0; return rs / 4294967296; };
     const x = c.getContext('2d');
     x.fillStyle = o.bg || '#f5eedd';
     x.fillRect(0, 0, c.width, c.height);
-    for (let i = 0; i < 160; i++) { x.fillStyle = `rgba(120,90,40,${0.04 + Math.random() * 0.05})`; x.fillRect(Math.random() * c.width, Math.random() * c.height, 2, 2); }
+    for (let i = 0; i < 220; i++) { x.fillStyle = `rgba(110,80,40,${0.04 + rnd() * 0.06})`; x.fillRect(rnd() * c.width, rnd() * c.height, 2 + rnd() * 3, 1 + rnd() * 2); }
+    if (o.painted) for (let i = 0; i < 9; i++) { x.fillStyle = 'rgba(90,64,36,0.06)'; x.fillRect(0, rnd() * c.height, c.width, 2 + rnd() * 5); }
     x.strokeStyle = o.ink || '#1f2d4a';
     if (o.frame !== false) {
       x.lineWidth = 6;
@@ -317,10 +363,28 @@ export function textPlane(text, w, h, o = {}) {
     x.fillStyle = o.ink || '#1f2d4a';
     x.textAlign = 'center';
     x.textBaseline = 'middle';
-    let size = Math.min(o.size || 80, c.height * 0.62);
-    x.font = `700 ${size}px Oswald, 'Arial Narrow', sans-serif`;
-    while (x.measureText(text).width > c.width * 0.8 && size > 10) { size -= 2; x.font = `700 ${size}px Oswald, 'Arial Narrow', sans-serif`; }
-    x.fillText(text, c.width / 2, c.height / 2 + size * 0.04);
+    const fam = o.painted ? "'Alfa Slab One', Oswald, serif" : "Oswald, 'Arial Narrow', sans-serif";
+    const wt = o.painted ? 400 : 700;
+    let size = Math.min(o.size || 80, c.height * 0.6);
+    x.font = `${wt} ${size}px ${fam}`;
+    while (x.measureText(text).width > c.width * 0.8 && size > 10) { size -= 2; x.font = `${wt} ${size}px ${fam}`; }
+    if (!o.painted) x.fillText(text, c.width / 2, c.height / 2 + size * 0.04);
+    else {
+      const total = x.measureText(text).width;
+      let px0 = c.width / 2 - total / 2;
+      x.textAlign = 'left';
+      for (const ch of text) {
+        const wch = x.measureText(ch).width;
+        x.save();
+        x.translate(px0 + wch / 2, c.height / 2 + size * 0.04 + (rnd() - 0.5) * size * 0.06);
+        x.rotate((rnd() - 0.5) * 0.06);
+        x.fillText(ch, -wch / 2, 0);
+        x.restore();
+        px0 += wch;
+      }
+      for (let i = 0; i < 70; i++) { x.fillStyle = o.bg; x.globalAlpha = 0.5 + rnd() * 0.4; x.fillRect(rnd() * c.width, rnd() * c.height, 1 + rnd() * 4, 1 + rnd() * 2); }
+      x.globalAlpha = 1;
+    }
     tex.needsUpdate = true;
   };
   draw();

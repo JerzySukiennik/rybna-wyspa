@@ -8,7 +8,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23f5eedd'/%3E%3Cpath d='M12 32c8-11 22-13 32-4l8-6v20l-8-6c-10 9-24 7-32-4z' fill='%231f2d4a'/%3E%3Ccircle cx='22' cy='30' r='2.6' fill='%23f5eedd'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Oswald:wght@500;600;700&family=Fraunces:opsz,wght@9..144,800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Oswald:wght@500;600;700&family=Fraunces:opsz,wght@9..144,800&family=Alfa+Slab+One&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <script type="importmap">
 {
@@ -28,14 +28,13 @@
 <div id="hud" class="hidden">
   <div id="lic" class="paper">
     <div class="h">Karta wędkarska</div>
-    <div class="row"><span>Wyspa</span><b id="farm-name">…</b></div>
-    <div class="row"><span>Poziom</span><b id="lvl-n">1</b></div>
-    <div class="row"><span>Na wyspie</span><b><i id="online-dot"></i><span id="online-n">…</span></b></div>
-    <div class="prog"><i id="lvl-fill"></i></div>
-    <div class="row"><span id="lvl-to">do poziomu 2</span><b id="lvl-next"></b></div>
-    <div id="tip" class="hidden"><div class="h">Co teraz?</div><div id="tip-t"></div></div>
+    <div class="row"><b id="farm-name">…</b><span><i id="online-dot"></i><span id="online-n">…</span></span></div>
+    <div class="lvl"><span class="lv">poz. <b id="lvl-n">1</b></span><div class="prog"><i id="lvl-fill"></i></div></div>
+    <div class="row small"><span id="lvl-to">do poziomu 2</span><b id="lvl-next"></b></div>
     <div class="stamp">RYBNA<br>WYSPA<br>2026</div>
   </div>
+  <div id="tip" class="paper hidden"><div class="h">Co teraz?</div><div id="tip-t"></div></div>
+  <svg width="0" height="0" style="position:absolute"><filter id="ink-rough" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="2" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.4" xChannelSelector="R" yChannelSelector="G"/></filter></svg>
   <div id="weather" class="paper"><div class="t"><span id="w-icon"></span><span id="w-name">Pogodnie</span><span id="w-left"></span></div><div class="s" id="w-trait"></div></div>
   <div id="ticket" class="paper"><div class="h">STAN KASY</div><div id="cash-n">0 zł</div><div id="rate">+0 zł / min</div></div>
   <div id="toasts"></div>

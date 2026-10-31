@@ -91,6 +91,7 @@ const PAL = {
   grassHi: C('#86a062'),
   meadow: C('#8a9660'),
   dry: C('#9a9a62'),
+  trod: C('#7c7a4a'),
   path: C('#a48a62'),
   path2: C('#957c56'),
   earth: C('#8b7152'),
@@ -102,6 +103,8 @@ const PAL = {
   wetMud: C('#594d3b'),
   under: C('#4c4f37'),
 };
+
+const TONES = [C('#5c7a3c'), C('#6c8a44'), C('#7d974e'), C('#8e9c58')];
 
 const nrm = new THREE.Vector3();
 const e1 = new THREE.Vector3();
@@ -124,31 +127,19 @@ function colorAt(mx, my, mz, slope, out) {
     out.copy(my < 0.22 ? PAL.wetSand : PAL.sand).lerp(PAL.wetSand, smooth(0.6, 0.15, my) * 0.6);
     return out.offsetHSL(0, 0, grain);
   }
-  if (my < 0.32) return out.copy(PAL.wetMud).lerp(PAL.mud, smooth(0.0, 0.32, my)).offsetHSL(0, 0, grain);
+  if (my < 0.42) return out.copy(PAL.wetMud).lerp(PAL.mud, smooth(0.02, 0.42, my) * 0.6).offsetHSL(0, 0, grain);
   if (slope > 0.34) {
     out.copy(slope > 0.6 ? PAL.earth2 : PAL.earth).lerp(PAL.mud, smooth(0.9, 0.3, my) * 0.7);
     return out.offsetHSL(0, 0, grain * 1.4);
   }
   if (my < LAND - 0.3 && s < 4.5) return out.copy(PAL.ledge).lerp(PAL.mud, smooth(0.8, 0.35, my) * 0.8).offsetHSL(0, 0, grain);
   const pd = pathDist(mx, mz);
-  const n = fbm(mx * 0.13, mz * 0.13, 3, 21);
-  const n2 = fbm(mx * 0.31 + 5, mz * 0.31 - 2, 2, 23);
-  out.copy(PAL.grass).lerp(n > 0.5 ? PAL.grassHi : PAL.grass2, Math.min(1, Math.abs(n - 0.5) * 3.2));
-  out.lerp(PAL.dry, smooth(0.6, 0.78, n2) * 0.7);
-  out.lerp(PAL.meadow, smooth(9, 4, s) * 0.5);
-  if (s > 3.5) {
-    out.lerp(PAL.grass2, smooth(1.35, 0.95, pd) * (1 - smooth(0.95, 0.6, pd)) * 0.6);
-    const pk = smooth(0.95, 0.5, pd);
-    if (pk > 0) out.lerp(tmpC.copy(PAL.path).lerp(PAL.path2, noise2(mx * 0.8, mz * 0.8, 3)), pk);
-  }
+  const n = fbm(mx * 0.33, mz * 0.33, 2, 21) + (fbm(mx * 0.09, mz * 0.09, 2, 24) - 0.5) * 0.25;
+  out.copy(TONES[n < 0.41 ? 0 : n < 0.49 ? 1 : n < 0.57 ? 2 : 3]);
+  if (s < 6.5) out.lerp(PAL.meadow, 0.45);
+  if (s > 3.5 && pd < 0.78) return out.copy(noise2(mx * 0.9, mz * 0.9, 3) < 0.5 ? PAL.path : PAL.path2).offsetHSL(0, 0, grain);
+  if (s > 3.5 && pd < 1.05) out.lerp(PAL.trod, 0.65);
   return out.offsetHSL(0, 0, grain * 0.6);
-}
-
-function vertexNormal(x, z, out) {
-  const e = 0.35;
-  const dx = islandHeight(x + e, z) - islandHeight(x - e, z);
-  const dz = islandHeight(x, z + e) - islandHeight(x, z - e);
-  return out.set(-dx / (2 * e), 1, -dz / (2 * e)).normalize();
 }
 
 function occlusion(x, z, h) {
@@ -166,9 +157,7 @@ export function buildIsland(holes = []) {
   const half = SPAN / 2;
   const N = n + 1;
   const vtx = new Float32Array(N * N * 3);
-  const vn = new Float32Array(N * N * 3);
   const ao = new Float32Array(N * N);
-  const tn = new THREE.Vector3();
   for (let iz = 0; iz <= n; iz++) {
     for (let ix = 0; ix <= n; ix++) {
       const k = iz * N + ix;
@@ -179,11 +168,7 @@ export function buildIsland(holes = []) {
       vtx[k * 3] = x;
       vtx[k * 3 + 1] = h;
       vtx[k * 3 + 2] = z;
-      if (h > -4.4) {
-        vertexNormal(x, z, tn);
-        vn[k * 3] = tn.x; vn[k * 3 + 1] = tn.y; vn[k * 3 + 2] = tn.z;
-        ao[k] = occlusion(x, z, h);
-      } else { vn[k * 3 + 1] = 1; ao[k] = 1; }
+      ao[k] = h > -4.4 ? occlusion(x, z, h) : 1;
     }
   }
   const pos = [];
@@ -191,7 +176,6 @@ export function buildIsland(holes = []) {
   const col = [];
   const idx = [];
   const c = new THREE.Color();
-  const vc = new THREE.Color();
   const fn = new THREE.Vector3();
   const push = (a, b, d) => {
     const ax = vtx[a * 3], ay = vtx[a * 3 + 1], az = vtx[a * 3 + 2];
@@ -206,17 +190,10 @@ export function buildIsland(holes = []) {
     e2.set(dx - ax, dy - ay, dz - az);
     fn.crossVectors(e1, e2).normalize();
     if (fn.y < 0) fn.negate();
-    const sharp = 1 - fn.y > 0.3;
     for (const v of [a, b, d]) {
       const o = ao[v];
-      if (sharp) {
-        nor.push(fn.x, fn.y, fn.z);
-        col.push(c.r * o, c.g * o, c.b * o);
-      } else {
-        nor.push(vn[v * 3], vn[v * 3 + 1], vn[v * 3 + 2]);
-        colorAt(vtx[v * 3], vtx[v * 3 + 1], vtx[v * 3 + 2], Math.min(0.29, 1 - vn[v * 3 + 1]), vc);
-        col.push(vc.r * o, vc.g * o, vc.b * o);
-      }
+      nor.push(fn.x, fn.y, fn.z);
+      col.push(c.r * o, c.g * o, c.b * o);
     }
     idx.push(a, b, d);
   };

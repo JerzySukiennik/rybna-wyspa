@@ -55,6 +55,16 @@ export class Soup {
     this.k.push(kind);
   }
 
+  triC(a, b, c, ca, cb, cc, glow = 0, want = null, kind = 0) {
+    const n = cross(sub(b, a), sub(c, a));
+    if (n[0] * n[0] + n[1] * n[1] + n[2] * n[2] < 1e-15) return;
+    if (want && dot(n, want) < 0) { let t = b; b = c; c = t; t = cb; cb = cc; cc = t; }
+    this.p.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
+    this.c.push(ca.r, ca.g, ca.b, cb.r, cb.g, cb.b, cc.r, cc.g, cc.b);
+    this.g.push(glow, glow, glow);
+    this.k.push(kind);
+  }
+
   quad(a, b, c, d, col, glow = 0, want = null, kind = 0) {
     this.tri(a, b, c, col, glow, want, kind);
     this.tri(a, c, d, col, glow, want, kind);
@@ -165,7 +175,7 @@ export class Caster {
   }
 }
 
-export function finStrip(S, rows, thick, nrm, colorFn, glow = 0, kind = 1) {
+export function finStrip(S, rows, thick, nrm, colorFn, glow = 0, kind = 1, vc = null) {
   const R = rows.length - 1, m = rows[0].length - 1;
   const off = (p, t, s) => madd(p, nrm, t * s);
   const gf = typeof glow === 'function' ? glow : () => glow;
@@ -174,8 +184,17 @@ export function finStrip(S, rows, thick, nrm, colorFn, glow = 0, kind = 1) {
       for (const s of [1, -1]) {
         const a = off(rows[r][j], thick[r], s), b = off(rows[r][j + 1], thick[r], s);
         const c = off(rows[r + 1][j + 1], thick[r + 1], s), d = off(rows[r + 1][j], thick[r + 1], s);
-        const col = colorFn(r, j, s), g = gf(r, j);
+        const g = gf(r, j);
         const w = mul(nrm, s);
+        if (vc) {
+          const k = vc.mul ? vc.mul(r, j, s) : 1, o = vc.over ? vc.over(r, j) : null;
+          const cv = (rr, jj) => (o ? o.clone() : vc.col(rr, jj, s).clone()).multiplyScalar(k);
+          const ca = cv(r, j), cb = cv(r, j + 1), cc = cv(r + 1, j + 1), cd = cv(r + 1, j);
+          if ((r + j) & 1) { S.triC(a, b, c, ca, cb, cc, g, w, kind); S.triC(a, c, d, ca, cc, cd, g, w, kind); }
+          else { S.triC(a, b, d, ca, cb, cd, g, w, kind); S.triC(b, c, d, cb, cc, cd, g, w, kind); }
+          continue;
+        }
+        const col = colorFn(r, j, s);
         if ((r + j) & 1) { S.tri(a, b, c, col, g, w, kind); S.tri(a, c, d, col, g, w, kind); }
         else { S.tri(a, b, d, col, g, w, kind); S.tri(b, c, d, col, g, w, kind); }
       }
@@ -274,7 +293,7 @@ export function tube(S, pts, radii, sides, col, glow = 0, kind = 4, o = {}) {
       const a = rings[i][j], b = rings[i][(j + 1) % sides], c = rings[i + 1][(j + 1) % sides], d = rings[i + 1][j];
       const mid = vlerp(axisA, axisB, 0.5);
       const w = sub(centroid(a, b, c), mid);
-      const cc = cf(i, j);
+      const cc = cf(i, j, w);
       if (radii[i + 1] <= 1e-6) S.tri(a, b, c, cc, glow, w, kind);
       else if (radii[i] <= 1e-6) S.tri(a, c, d, cc, glow, w, kind);
       else S.quad(a, b, c, d, cc, glow, w, kind);
@@ -313,7 +332,8 @@ export function blob(S, center, radii, detail, colFn, o = {}) {
     const c = P(src.getX(i + 2), src.getY(i + 2), src.getZ(i + 2));
     const m = centroid(a, b, c);
     const w = sub(m, center);
-    S.tri(a, b, c, colFn(m, w, i / 3), o.glow || 0, w, o.kind || 0);
+    if (o.vcol) S.triC(a, b, c, o.vcol(a, sub(a, center)), o.vcol(b, sub(b, center)), o.vcol(c, sub(c, center)), o.glow || 0, w, o.kind || 0);
+    else S.tri(a, b, c, colFn(m, w, i / 3), o.glow || 0, w, o.kind || 0);
   }
 }
 

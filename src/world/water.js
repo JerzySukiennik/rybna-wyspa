@@ -128,11 +128,11 @@ void main() {
 
   float foamLine = 1.0 - smoothstep(0.05, 0.22 + 0.06 * sin(uTime * 0.9 + vW.x * 0.7 + vW.z * 0.5), min(dIsl, min(dBank, barDepth(vW.xz))));
   float foamN = smoothstep(0.35, 0.75, vn(vW.xz * 2.2 + uTime * 0.4));
-  col = mix(col, uFoam * (uHemi * 0.9 + uSunColor * 0.35), foamLine * (0.35 + 0.4 * foamN));
+  col = mix(col, uFoam * (uHemi * 0.9 + uSunColor * 0.35), foamLine * (0.08 + 0.22 * foamN));
   col += uFoam * rip * 0.55 * (uHemi * 0.8 + 0.2);
 
   float alpha = max(mix(0.42, 1.0, smoothstep(0.05, 1.5, depth)), clamp(fres * 1.3, 0.0, 1.0));
-  alpha = max(alpha, foamLine * 0.8);
+  alpha = max(alpha, foamLine * 0.35);
   gl_FragColor = vec4(col, alpha);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>

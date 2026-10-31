@@ -145,9 +145,16 @@ export class Geo {
     return this;
   }
 
-  geometry({ uv = false, emit = true } = {}) {
+  geometry({ uv = false, emit = true, ao = 0 } = {}) {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(this.p, 3));
+    if (ao > 0) {
+      for (let i = 0; i < this.p.length / 3; i++) {
+        const t = Math.min(1, Math.max(0, this.p[i * 3 + 1] / ao));
+        const k = 0.66 + 0.34 * t * t * (3 - 2 * t);
+        this.c[i * 3] *= k; this.c[i * 3 + 1] *= k; this.c[i * 3 + 2] *= k;
+      }
+    }
     g.setAttribute('color', new THREE.Float32BufferAttribute(this.c, 3));
     if (emit) g.setAttribute('aEmit', new THREE.Float32BufferAttribute(this.e, 1));
     if (uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(this.uv, 2));

@@ -82,8 +82,8 @@ export class Game {
     r.shadowMap.enabled = true;
     r.shadowMap.type = THREE.PCFShadowMap;
     const tm = new URLSearchParams(location.search).get('tm');
-    r.toneMapping = tm === 'neutral' ? THREE.NeutralToneMapping : THREE.ACESFilmicToneMapping;
-    r.toneMappingExposure = tm === 'neutral' ? 1.0 : 0.9;
+    r.toneMapping = tm === 'neutral' ? THREE.NeutralToneMapping : tm === 'aces' ? THREE.ACESFilmicToneMapping : THREE.AgXToneMapping;
+    r.toneMappingExposure = tm === 'neutral' ? 1.0 : tm === 'aces' ? 0.9 : 1.12;
     r.info.autoReset = false;
     this.renderer = r;
     this.scene = new THREE.Scene();
@@ -112,7 +112,7 @@ export class Game {
     this.blockMat = blockMaterial();
     this.river = buildRiver(this.scene, this.blockMat);
     this.structs = buildStructures(this.scene, this.phys, this.blockMat, this.models);
-    if (document.fonts) document.fonts.load('700 64px Oswald').then(() => redrawSigns()).catch(() => {});
+    if (document.fonts) Promise.all([document.fonts.load('700 64px Oswald'), document.fonts.load('400 64px "Alfa Slab One"')]).then(() => redrawSigns()).catch(() => {});
     const decoMat = addWet(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }));
     progress(0.46, 'Drzewa i trzciny…');
     this.decor = buildDecor(this.scene, this.phys, this.models, decoMat, this.blockMat);
@@ -173,10 +173,10 @@ export class Game {
     const rt = new THREE.WebGLRenderTarget(size.x, size.y, { type: THREE.HalfFloatType, samples: 4 });
     this.composer = new EffectComposer(r, rt);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
-    this.bloom = new UnrealBloomPass(new THREE.Vector2(size.x / 2, size.y / 2), 0.26, 0.4, 1.35);
+    this.bloom = new UnrealBloomPass(new THREE.Vector2(size.x / 2, size.y / 2), 0.32, 0.5, 2.2);
     this.composer.addPass(this.bloom);
     this.grade = new ShaderPass({
-      uniforms: { tDiffuse: { value: null }, uSat: { value: 0.98 }, uVig: { value: 0.2 }, uWarm: { value: 0 } },
+      uniforms: { tDiffuse: { value: null }, uSat: { value: 1.15 }, uVig: { value: 0.2 }, uWarm: { value: 0 } },
       vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
       fragmentShader: `uniform sampler2D tDiffuse; uniform float uSat; uniform float uVig; uniform float uWarm; varying vec2 vUv;
         void main(){ vec4 c = texture2D(tDiffuse, vUv); float l = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
@@ -792,10 +792,14 @@ export class Game {
       this.contact.setFixed(fixed);
     }
     this.contact.fish(this.fishView.recs.values());
+    if (this.structs.chimney && (this.smokeT = (this.smokeT || 0) - dt) <= 0) {
+      this.smokeT = 0.35 + Math.random() * 0.2;
+      this.fx.burst('smoke', this.structs.chimney, 1, 1.4);
+    }
     this.grass.update(this.time, this.player.feet, ['wichura', 'burza'].includes(w.id) ? 2.6 : 1, ['mroz', 'sniezyca'].includes(w.id) ? 0.8 : 0);
     U.lamp.value = L.lampK;
     U.wet.value += (L.wet - U.wet.value) * Math.min(1, dt * (L.wet > U.wet.value ? 0.5 : 0.05));
-    for (const l of this.lamps) l.intensity = 9 * L.lampK;
+    for (const l of this.lamps) l.intensity = 10 * L.lampK;
     this.fishView.mat.envMapIntensity = 0.15 + 0.85 * Math.pow(1 - L.night, 1.5);
     waterLight.value.setScalar(0.35 + 0.65 * (1 - L.night * 0.75));
     this.light = L;
@@ -831,7 +835,8 @@ export class Game {
     const el = document.getElementById('tip');
     if (!t) { el.classList.add('hidden'); return; }
     el.classList.remove('hidden');
-    if (this.lastTip !== t) { document.getElementById('tip-t').innerHTML = t; this.lastTip = t; }
+    if (this.lastTip !== t) { document.getElementById('tip-t').innerHTML = t; this.lastTip = t; this.tipShownAt = this.time; }
+    el.classList.toggle('fade', this.time - (this.tipShownAt || 0) > 9);
   }
 
   grassShapes() {
@@ -879,9 +884,20 @@ export class Game {
 
   menuCamera(dt) {
     this.mT = (this.mT || 0) + dt * 0.04;
-    const r = 38;
-    this.camera.position.set(Math.cos(this.mT) * r, 17 + Math.sin(this.mT * 1.3) * 3, Math.sin(this.mT) * r);
-    this.camera.lookAt(0, 1.5, 2);
+    if ((this.menuCT = (this.menuCT || 0) - dt) <= 0 || !this.menuC) {
+      this.menuCT = 2;
+      const c = new THREE.Vector3();
+      let n = 0;
+      for (const b of this.blocks.blocks.values()) { c.add(b.pos); n++; }
+      this.menuGoal = n ? c.multiplyScalar(1 / n) : new THREE.Vector3(0, LAND, 2);
+      this.menuN = n;
+      if (!this.menuC) this.menuC = this.menuGoal.clone();
+    }
+    this.menuC.lerp(this.menuGoal, Math.min(1, dt * 0.6));
+    const near = this.menuN > 0;
+    const r = near ? 21 : 38, h = near ? 11.5 : 17;
+    this.camera.position.set(this.menuC.x + Math.cos(this.mT) * r, h + Math.sin(this.mT * 1.3) * 1.5, this.menuC.z + Math.sin(this.mT) * r);
+    this.camera.lookAt(this.menuC.x, LAND, this.menuC.z);
   }
 }
 

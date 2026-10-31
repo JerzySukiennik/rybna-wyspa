@@ -11,11 +11,11 @@
   await P('dB3', 'myjnia', 1.1, -3, -Math.PI / 2);
   await P('dB4', 'tasma', 3.1, -3, -Math.PI / 2);
   await P('dL1', 'lampa', 1.5, 3.2, 0);
-  await P('dL2', 'lampa', -3.5, 11.8, 0);
+  await P('dL2', 'lampa', -6.6, 6.4, 0);
   await P('dL3', 'lampa', 8.6, -7.6, 0);
   await P('dF1', 'flaga', 1.3, -7.2, 0);
   await P('dW1', 'lawka', -6.2, 7.6, Math.PI / 2);
-  for (let k = 0; k < 4; k++) await P('dK' + k, 'kwiaty', -6.6 + k * 0.7, 9.4, 0);
+  for (const [k, x, z] of [[0, -6.9, 9.7], [1, -5.6, 10.4], [2, -6.2, 8.6], [3, -4.8, 9.1]]) await P('dK' + k, 'kwiaty', x, z, k * 1.7);
   await P('dI1', 'lod', -3.6, -6.2, 0);
   window.__pumpN = 0;
   clearInterval(window.__pumpT);
