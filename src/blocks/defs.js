@@ -242,15 +242,15 @@ function pumpVisual(g) {
   for (const y of [0.62, 1.12, 1.36]) g.cyl(0, y, 0.05, 0.165, 0.165, 0.05, 10, K.castL);
   g.cyl(0, 1.38, 0.05, 0.16, 0.06, 0.16, 10, K.cast);
   g.cyl(0, 1.54, 0.05, 0.05, 0.02, 0.1, 6, K.castL);
-  g.line([0, 1.06, -0.05], [0, 1.08, -0.36], 0.055, K.cast, 8);
-  g.line([0, 1.08, -0.36], [0, 0.98, -0.47], 0.055, K.cast, 8);
-  g.cyl(0, 0.9, -0.48, 0.075, 0.06, 0.09, 8, K.castL);
+  g.line([0, 1.06, -0.05], [0, 1.08, -0.42], 0.055, K.cast, 8);
+  g.line([0, 1.08, -0.42], [0, 1.0, -0.64], 0.055, K.cast, 8);
+  g.at(0, 0.97, -0.68, 0, -0.5, 0).cyl(0, -0.06, 0, 0.08, 0.065, 0.1, 8, K.castL).pop();
   g.box(0, 1.5, 0.12, 0.05, 0.16, 0.06, K.castL);
   g.line([0, 1.52, 0.12], [0, 1.67, 0.62], 0.028, K.cast, 6);
   g.line([0, 1.67, 0.62], [0, 1.6, 0.86], 0.026, K.cast, 6);
   g.cyl(0, 1.56, 0.88, 0.05, 0.05, 0.08, 6, K.castL);
   g.line([0, 1.33, 0.05], [0, 1.52, 0.12], 0.02, K.cast, 5);
-  return { outlet: [0, 0.98, -0.56], vel: [0, 0.7, -1.9], lever: [0, 1.62, 0.6] };
+  return { outlet: [0, 0.93, -0.74], vel: [0, 0.1, -0.6], lever: [0, 1.62, 0.6] };
 }
 
 function netPanel(g, x0, x1, yTop, yBot, z, sag, nx = 7, ny = 6) {
@@ -475,7 +475,26 @@ function portalVisual(g, def) {
   return { outlet: [0, 1.25, -0.4], vel: [0, 1.0, -1.8] };
 }
 
+function chute(g, d) {
+  const z0 = -d / 2 + 0.04, z1 = -d / 2 - 0.3, y0 = 1.06, y1 = 0.86;
+  const ang = Math.atan2(y0 - y1, z0 - z1), len = Math.hypot(y0 - y1, z0 - z1);
+  g.at(0, (y0 + y1) / 2, (z0 + z1) / 2, 0, ang, 0);
+  g.box(0, 0, 0, 0.38, 0.03, len, K.metalL, { top: K.galvL });
+  for (const s of [-1, 1]) g.box(s * 0.19, 0.06, 0, 0.025, 0.14, len, K.metalL, { top: K.galvL });
+  g.pop();
+  for (const s of [-1, 1]) g.line([s * 0.17, 0.0, -d / 2 - 0.02], [s * 0.17, 0.98, -d / 2 - 0.02], 0.018, K.metalD, 4);
+  g.box(0, y1 - 0.03, z1 + 0.02, 0.4, 0.03, 0.05, K.metalD);
+}
+
 function spawnerVisual(g, def) {
+  const out = spawnerBody(g, def);
+  if (def.id === 'pompa') return out;
+  const d = def.dim[2];
+  chute(g, d);
+  return { outlet: [0, 0.94, -d / 2 - 0.26], vel: [0, 0.1, -0.65] };
+}
+
+function spawnerBody(g, def) {
   switch (def.id) {
     case 'pompa': return pumpVisual(g, def);
     case 'siec': return siecVisual(g, def);

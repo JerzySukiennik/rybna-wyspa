@@ -171,6 +171,12 @@ export class Build {
     const pin = ports.find((x) => x.io === 'in'), pout = ports.find((x) => x.io === 'out');
     this.inMark.visible = !!pin;
     this.outMark.visible = !!pout;
+    const sp = def.kind === 'spawner' ? blockVisual(t).spawn : null;
+    if (sp) {
+      this.outMark.visible = true;
+      this.outMark.position.set(sp.outlet[0], BELT_TOP + 0.05, sp.outlet[2] - 0.1);
+      this.outMark.rotation.set(0, 0, 0);
+    }
     if (pin) this.inMark.position.set(pin.p[0], pin.p[1] + 0.14, pin.p[2]);
     if (pout) {
       this.outMark.position.set(pout.p[0], pout.p[1] + 0.14, pout.p[2]);

@@ -71,10 +71,10 @@ export class Farm {
     }
     const rec = rollFish(b.def, this.rand, { luck: this.luck(), weather: this.weather(), night: this.night() });
     rec.by = by || null;
-    const jitter = new THREE.Vector3((this.rand() - 0.5) * 0.12, 0, (this.rand() - 0.5) * 0.12);
+    const jitter = new THREE.Vector3((this.rand() - 0.5) * 0.08, 0, (this.rand() - 0.5) * 0.08);
     const pos = b.outlet.clone().add(jitter);
-    const vel = b.vel.clone().multiplyScalar(0.85 + this.rand() * 0.3);
-    const spin = { x: (this.rand() - 0.5) * 6, y: (this.rand() - 0.5) * 3, z: (this.rand() - 0.5) * 6 };
+    const vel = b.vel.clone().multiplyScalar(0.9 + this.rand() * 0.2);
+    const spin = { x: (this.rand() - 0.5) * 2, y: (this.rand() - 0.5) * 1.5, z: (this.rand() - 0.5) * 2 };
     const yaw = Math.atan2(-b.vel.x, -b.vel.z);
     const rot = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, yaw + Math.PI / 2, Math.PI / 2 * (this.rand() < 0.5 ? 1 : -1)));
     const f = this.sim.spawn(rec, pos, vel, rot, spin);

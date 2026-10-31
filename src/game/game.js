@@ -638,8 +638,10 @@ export class Game {
   }
 
   handleKeys(inp) {
+    const free = (this.input.locked || this.settings.nolock) && !this.paused && !this.panels.open && !this.panels.shopOpen;
     for (const k of inp.pressed) {
-      if (k.startsWith('Digit') && this.input.locked) {
+      if (k === 'Space' && free) this.player.queueJump();
+      else if (k.startsWith('Digit') && this.input.locked) {
         const n = +k.slice(5);
         if (n >= 1 && n <= 9) { this.selSlot = n - 1; this.audio.play('ui_tab', { vol: 0.4 }); }
       } else if (k === 'KeyF' && this.settings.debug) {
