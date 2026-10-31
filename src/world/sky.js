@@ -71,7 +71,7 @@ void main() {
 }`;
 
 const C = (h) => new THREE.Color(h);
-const DAY = { top: C('#5d93c6'), hor: C('#d6e0e0'), sun: C('#ffe3bc'), hemiSky: C('#b9d3e6'), hemiGround: C('#5e5638') };
+const DAY = { top: C('#5a8fc8'), hor: C('#c9d9e3'), sun: C('#ffe8c8'), hemiSky: C('#bfd3f0'), hemiGround: C('#55603a') };
 const DUSK = { top: C('#4a5d96'), hor: C('#e9b48c'), sun: C('#ffb070'), hemiSky: C('#e6c4aa'), hemiGround: C('#5a4a3c') };
 const NIGHT = { top: C('#0a1326'), hor: C('#1b2840'), sun: C('#a9bcff'), hemiSky: C('#33466c'), hemiGround: C('#151a20') };
 const GREY = { top: C('#7f8b96'), hor: C('#b7bfc6'), sun: C('#dfe4ea'), hemiSky: C('#c3cbd0'), hemiGround: C('#5b5f55') };
@@ -171,7 +171,7 @@ export class Sky {
     else sunA = Math.PI + ((phase - NIGHT_FROM) / (1 - NIGHT_FROM)) * Math.PI;
     const dayK = clamp(Math.sin(sunA) * 3.2 + 0.25, 0, 1);
     const duskK = clamp(1 - Math.abs(Math.sin(sunA)) * 3.0, 0, 1) * (night ? 0.4 : 1);
-    const sunDir = new THREE.Vector3(Math.cos(sunA) * Math.cos(0.5), Math.sin(sunA) * 0.78, Math.cos(sunA) * Math.sin(0.5) + 0.55).normalize();
+    const sunDir = new THREE.Vector3(Math.cos(sunA) * Math.cos(0.5), Math.sin(sunA) * 0.6, Math.cos(sunA) * Math.sin(0.5) + 0.55).normalize();
     const nk = night ? (phase - NIGHT_FROM) / (1 - NIGHT_FROM) : 0;
     const mAz = -0.35 + nk * 0.9, mEl = 0.22 + Math.sin(nk * Math.PI) * 0.14;
     const moonDir = new THREE.Vector3(Math.cos(mAz) * Math.cos(mEl), Math.sin(mEl), Math.sin(mAz) * Math.cos(mEl));
@@ -209,10 +209,10 @@ export class Sky {
     L.dir.copy(useMoon ? moonDir : sunDir);
     L.sun.copy(pick('sun'));
     if (useMoon) L.sun.set(w.blood > 0.3 ? '#ff9a9a' : '#a9bcff');
-    L.sunI = useMoon ? (0.36 + w.moon * 0.42) * (1 - grey * 0.7) : (0.55 + 2.3 * dayK) * (1 - grey * 0.65) * (1 - w.dark * 0.5);
+    L.sunI = useMoon ? (0.36 + w.moon * 0.42) * (1 - grey * 0.7) : (0.6 + 2.9 * dayK) * (1 - grey * 0.7) * (1 - w.dark * 0.5);
     L.sunVis = u.uSunVis.value * (useMoon ? 0 : 1);
     L.hemiSky.copy(pick('hemiSky'));
-    L.hemiI = (0.34 + 0.78 * dayK) * (1 + grey * 0.3) * (1 - w.dark * 0.4) + (1 - dayK) * (0.16 + w.moon * 0.16) + flash * 2.5;
+    L.hemiI = (0.45 + 0.85 * dayK) * (1 + grey * 0.75) * (1 - w.dark * 0.4) + (1 - dayK) * (0.16 + w.moon * 0.16) + flash * 2.5;
     L.top.copy(u.uTop.value);
     L.horizon.copy(u.uHorizon.value);
     L.night = 1 - dayK;
@@ -234,8 +234,8 @@ export class Sky {
     this.scene.fog.color.copy(u.uHorizon.value);
     const fogK = clamp(w.fog, 0, 1);
     const mist = clamp((w.fog - 0.7) / 0.3, 0, 1);
-    this.scene.fog.near = lerp(lerp(150, 40, fogK / 0.7 > 1 ? 1 : fogK / 0.7), 6, mist);
-    this.scene.fog.far = lerp(lerp(650, 220, fogK / 0.7 > 1 ? 1 : fogK / 0.7), 95, mist);
+    this.scene.fog.near = lerp(lerp(260, 40, fogK / 0.7 > 1 ? 1 : fogK / 0.7), 6, mist);
+    this.scene.fog.far = lerp(lerp(1150, 220, fogK / 0.7 > 1 ? 1 : fogK / 0.7), 95, mist);
 
     const tgt = this.sun.target.position;
     const snap = 76 / 2048;

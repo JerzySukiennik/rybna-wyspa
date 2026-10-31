@@ -15,7 +15,7 @@ export function blockMaterial(o = {}) {
       .replace('#include <color_vertex>', '#include <color_vertex>\nvEmit = aEmit;');
     s.fragmentShader = s.fragmentShader
       .replace('#include <common>', '#include <common>\nvarying float vEmit;\nuniform float uLamp;\nuniform float uTime;\nuniform float uWet;')
-      .replace('#include <color_fragment>', '#include <color_fragment>\nfloat nightLit = step(1.5, vEmit);\ndiffuseColor.rgb = mix(diffuseColor.rgb * (1.0 - 0.18 * uWet), vec3(0.08, 0.1, 0.13), nightLit);')
+      .replace('#include <color_fragment>', '#include <color_fragment>\nfloat nightLit = step(1.5, vEmit);\ndiffuseColor.rgb = mix(mix(diffuseColor.rgb, vec3(dot(diffuseColor.rgb, vec3(0.3, 0.59, 0.11))), 0.3 * uWet) * (1.0 - 0.25 * uWet), vec3(0.08, 0.1, 0.13), nightLit);')
       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += vColor.rgb * mix(vEmit * (0.35 + uLamp * 1.5), (vEmit - 1.5) * uLamp * 3.2, nightLit);');
   };
   m.customProgramCacheKey = () => 'block-emit';
@@ -27,7 +27,7 @@ export function addWet(m) {
     s.uniforms.uWet = U.wet;
     s.fragmentShader = s.fragmentShader
       .replace('#include <common>', '#include <common>\nuniform float uWet;')
-      .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb *= 1.0 - 0.18 * uWet;');
+      .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(dot(diffuseColor.rgb, vec3(0.3, 0.59, 0.11))), 0.3 * uWet) * (1.0 - 0.25 * uWet);');
   };
   m.customProgramCacheKey = () => 'wet';
   return m;
@@ -51,7 +51,8 @@ export function terrainMaterial() {
         float fine = 1.0 - smoothstep(14.0, 40.0, camD);
         float green = smoothstep(0.0, 0.05, diffuseColor.g - diffuseColor.r);
         float nv = (tn(vWP.xz * 0.33 + 7.0) - 0.5) * 0.16 + (tn(vWP.xz * 1.6) - 0.5) * 0.12 * (0.4 + 0.6 * fine) + (tn(vWP.xz * vec2(7.0, 2.2) + 3.0) - 0.5) * 0.1 * fine;
-        diffuseColor.rgb *= (1.0 + nv * mix(0.45, 1.0, green)) * (1.0 - 0.18 * uWet);`);
+        diffuseColor.rgb *= 1.0 + nv * mix(0.45, 1.0, green);
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(dot(diffuseColor.rgb, vec3(0.3, 0.59, 0.11))), 0.3 * uWet) * (1.0 - 0.25 * uWet);`);
   };
   m.customProgramCacheKey = () => 'terrain';
   return m;

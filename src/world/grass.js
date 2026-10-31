@@ -135,11 +135,12 @@ export class Grass {
         .replace('#include <normal_fragment_begin>', `#include <normal_fragment_begin>
           normal = normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz);`)
         .replace('#include <color_fragment>', `#include <color_fragment>
-          vec3 gBase = vec3(0.15, 0.23, 0.06);
-          vec3 gTip = mix(vec3(0.26, 0.35, 0.09), vec3(0.35, 0.41, 0.13), vTint);
+          vec3 gBase = vec3(0.13, 0.2, 0.07);
+          vec3 gTip = mix(vec3(0.22, 0.31, 0.11), vec3(0.3, 0.37, 0.15), vTint);
           gTip = mix(gTip, vec3(0.42, 0.4, 0.15), smoothstep(0.55, 0.85, vClump) * 0.55);
           gTip = mix(gTip, vec3(0.2, 0.31, 0.08), smoothstep(0.4, 0.15, vClump) * 0.5);
-          diffuseColor.rgb = mix(gBase, gTip, smoothstep(0.0, 1.0, vH)) * (0.92 + 0.14 * vTint) * (1.0 - 0.16 * uWet);
+          diffuseColor.rgb = mix(gBase, gTip, smoothstep(0.0, 1.0, vH)) * (0.92 + 0.14 * vTint);
+          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(dot(diffuseColor.rgb, vec3(0.3, 0.59, 0.11))), 0.3 * uWet) * (1.0 - 0.25 * uWet);
           if (vFlower > 0.5 && vH > 0.8) diffuseColor.rgb = fract(vTint * 13.0) > 0.45 ? vec3(0.86, 0.85, 0.8) : vec3(0.85, 0.66, 0.1);
           diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.86, 0.93, 0.96), uFrost * smoothstep(0.4, 1.0, vH));`);
     };
@@ -157,12 +158,19 @@ export class Grass {
     const off = new Float32Array(count * 4);
     const tint = new Float32Array(count);
     const r = rng(1234);
-    for (let i = 0; i < count; i++) {
-      off[i * 4] = (r() - 0.5) * TILE;
-      off[i * 4 + 1] = (r() - 0.5) * TILE;
-      off[i * 4 + 2] = 0.09 + r() * r() * 0.17;
-      off[i * 4 + 3] = r() * Math.PI * 2;
-      tint[i] = r();
+    let i = 0;
+    while (i < count) {
+      const cx = (r() - 0.5) * TILE, cz = (r() - 0.5) * TILE;
+      const n = Math.min(count - i, r() < 0.35 ? 1 : 5 + Math.floor(r() * 11));
+      const rad = 0.06 + r() * 0.2, h0 = 0.1 + r() * r() * 0.15, t0 = r();
+      for (let k = 0; k < n; k++, i++) {
+        const a = r() * Math.PI * 2, d = Math.sqrt(r()) * rad;
+        off[i * 4] = cx + Math.cos(a) * d;
+        off[i * 4 + 1] = cz + Math.sin(a) * d;
+        off[i * 4 + 2] = Math.max(0.05, h0 * (0.65 + r() * 0.7) * (1.15 - d / Math.max(rad, 0.01) * 0.4));
+        off[i * 4 + 3] = a + (r() - 0.5) * 1.2;
+        tint[i] = Math.min(0.999, Math.max(0, t0 + (r() - 0.5) * 0.35));
+      }
     }
     geo.setAttribute('aOff', new THREE.InstancedBufferAttribute(off, 4));
     geo.setAttribute('aTint', new THREE.InstancedBufferAttribute(tint, 1));

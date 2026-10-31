@@ -119,7 +119,7 @@ export class Panels {
       const R = RARITIES[sp.rarity];
       const miss = !rec;
       const secret = sp.rarity === 6 && miss;
-      const rc = R.color === '#b9c2cc' ? '#6b7785' : R.color;
+      const rc = R.color;
       html += `<div class="card album-card ${miss ? 'miss' : ''}" style="--rc:${rc}" title="${secret ? '???' : esc(sp.info)}"><img src="${this.g.icons.fish(sp.idx)}" alt="" style="width:120px;height:72px;object-fit:contain"><b>${secret ? '???' : esc(sp.name)}</b><span class="lat">${secret ? '' : esc(sp.latin || 'gatunek nieopisany')}</span><span class="rar">${R.name}</span>`;
       html += `<div class="vs">${[0, 1, 2, 3].map((v) => `<i class="v${v} ${rec && rec.v && rec.v[v] ? 'on' : ''}" title="${v ? VARIANTS[v].name : 'zwykła'}"></i>`).join('')}</div>`;
       if (rec) html += `<small>sprzedane: ${fmtNum(rec.n, 0)} · rekord ${fmtKg(rec.w)} · traity: ${Object.keys(rec.t || {}).length}</small>`;
@@ -218,7 +218,7 @@ export class Panels {
       for (const d of BLOCKS.filter((x) => x.cat === this.shopCat)) {
         const locked = d.lvl > lvl;
         html += `<div class="item ${locked ? 'lock' : ''}"><img src="${this.g.icons.block(d.id)}" alt=""><b>${esc(d.name)}</b><div class="desc">${esc(d.desc || describe(d))}</div><div class="price">${fmtZl(d.cost)}</div><div class="own">w magazynie: ${s.wh[d.id] || 0}</div>`;
-        if (locked) html += `<div class="lv">od poziomu ${d.lvl}</div>`;
+        if (locked) html += `<div class="lv">zablokowane · od poziomu ${d.lvl}</div>`;
         else html += `<div class="row">${[1, 5, 20].map((n) => `<button class="btn ${n === 1 ? 'pri' : ''}" data-buy="${d.id}" data-n="${n}" ${s.cash < d.cost * n ? 'disabled' : ''}>×${n}</button>`).join('')}</div>`;
         html += `</div>`;
       }
@@ -249,8 +249,8 @@ function describe(d) {
   if (d.kind === 'spawner') {
     const names = ['pospolite', 'niepospolite', 'rzadkie', 'epickie', 'legendarne', 'mityczne'];
     const tot = d.w.reduce((a, b) => a + b, 0);
-    const best = d.w.map((w, i) => [w, i]).filter(([w]) => w > 0).map(([w, i]) => `${names[i]} ${Math.round((w / tot) * 100)}%`).slice(-3).join(', ');
-    return `${d.manual ? 'Ręczny' : `Co ${d.every} s`}: ${best}${d.secret ? ', szansa na sekretne' : ''}`;
+    const best = d.w.map((w, i) => [w, i]).filter(([w]) => w > 0).map(([w, i]) => `${names[i]}\u00a0${Math.round((w / tot) * 100)}%`).slice(-3).join(', ');
+    return `${d.manual ? 'Ręczny' : `Co\u00a0${String(d.every).replace('.', ',')}\u00a0s`}: ${best}${d.secret ? ', szansa na\u00a0sekretne' : ''}`;
   }
   if (d.kind === 'belt') return `Taśma ${String(d.speed).replace('.', ',')} m/s. Ryby na niej schną.`;
   if (d.kind === 'flume') return 'Woda niesie ryby, nie psują się.';

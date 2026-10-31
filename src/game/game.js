@@ -20,6 +20,7 @@ import { BlockWorld } from '../world/blockworld.js';
 import { blockMaterial, addWet, U, waterLight } from '../render/materials.js';
 import { FishView } from '../render/fishview.js';
 import { Fx } from '../render/fx.js';
+import { ContactShadows } from '../render/contact.js';
 import { Avatars } from '../render/avatars.js';
 import { Icons } from '../render/icons.js';
 import { loadModels } from '../render/models.js';
@@ -130,6 +131,7 @@ export class Game {
     this.grassDirty = true;
     this.fishView = new FishView(this.scene, this.models);
     this.fx = new Fx(this.scene, this.camera);
+    this.contact = new ContactShadows(this.scene, (x, z) => islandHeight(x, z));
     this.avatars = new Avatars(this.scene, this.models, this.fishView);
     this.icons = new Icons(this.renderer, this.models);
     this.makeEnv();
@@ -174,11 +176,12 @@ export class Game {
     this.bloom = new UnrealBloomPass(new THREE.Vector2(size.x / 2, size.y / 2), 0.26, 0.4, 1.35);
     this.composer.addPass(this.bloom);
     this.grade = new ShaderPass({
-      uniforms: { tDiffuse: { value: null }, uSat: { value: 1.03 }, uVig: { value: 0.22 }, uWarm: { value: 0 } },
+      uniforms: { tDiffuse: { value: null }, uSat: { value: 0.98 }, uVig: { value: 0.2 }, uWarm: { value: 0 } },
       vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
       fragmentShader: `uniform sampler2D tDiffuse; uniform float uSat; uniform float uVig; uniform float uWarm; varying vec2 vUv;
         void main(){ vec4 c = texture2D(tDiffuse, vUv); float l = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
         c.rgb = mix(vec3(l), c.rgb, uSat);
+        c.rgb = pow(max(c.rgb, vec3(0.0)), vec3(1.07)) * 1.06;
         c.rgb += vec3(-0.003, 0.0, 0.004) * (1.0 - smoothstep(0.0, 0.45, l)) + vec3(0.014, 0.007, -0.01) * smoothstep(0.5, 1.2, l) * (1.0 + uWarm);
         float d = distance(vUv, vec2(0.5)); c.rgb *= mix(1.0, 1.0 - uVig, smoothstep(0.32, 0.82, d));
         gl_FragColor = c; }`,
@@ -204,7 +207,8 @@ export class Game {
     const sun = new THREE.Mesh(new THREE.SphereGeometry(1.2, 8, 6), new THREE.MeshBasicMaterial({ color: '#ffe3bc' }));
     sun.position.set(5, 7, 3);
     s.add(sun);
-    this.scene.environment = pm.fromScene(s, 0.04).texture;
+    this.envTex = pm.fromScene(s, 0.04).texture;
+    for (const m of [this.fishView.mat, ...Object.values(this.fishView.accMat)]) if (m.isMeshStandardMaterial) m.envMap = this.envTex;
     pm.dispose();
   }
 
@@ -373,7 +377,7 @@ export class Game {
     const p = new THREE.Vector3(pos.x, (this.structs.sell.top || pos.y) + 1.2, pos.z);
     if (pos.distanceTo(this.structs.sell.pos) < 4) p.copy(this.structs.sell.pos).add(new THREE.Vector3(0, 1.4, 0));
     const R = RARITIES[SPECIES[f.sp].rarity];
-    this.fx.money(p, value, f.v === 2 ? '#ffd23a' : f.v === 3 ? '#ff9ff0' : R.color === '#b9c2cc' ? '#ffe9a8' : R.color);
+    this.fx.money(p, value, f.v === 2 ? '#ffd23a' : f.v === 3 ? '#ff9ff0' : SPECIES[f.sp].rarity === 0 ? '#f2e3b0' : R.color);
     this.fx.burst('coin', p, Math.min(24, 4 + Math.floor(Math.log10(1 + value) * 3)), 1);
     const big = value > Math.max(800, (this.farm ? this.farm.rate : 0) * 0.3);
     this.audio.play(big ? 'sell_big' : value > 200 ? 'sell_3' : value > 30 ? 'sell_2' : 'sell_1', { pos: p, vol: 0.85, range: 45, gap: 0.06 });
@@ -778,12 +782,19 @@ export class Game {
     const flash = this.wfx.update(w.id, dt, this.time, camPos, night, this.light);
     const L = this.sky.update(phase, dt, this.time, camPos, flash);
     this.water.update(this.time, L);
-    if (this.grassDirty) { this.grassDirty = false; this.grass.setShapes(this.grassShapes()); }
+    if (this.grassDirty) {
+      this.grassDirty = false;
+      this.grass.setShapes(this.grassShapes());
+      const fixed = [...(this.structs.blobs || []), ...(this.decor.blobs || [])];
+      for (const b of this.blocks.blocks.values()) if (!b.def.ghost) fixed.push({ x: b.pos.x, y: b.pos.y, z: b.pos.z, w: b.def.dim[0], l: b.def.dim[2], yaw: b.rec.ry || 0 });
+      this.contact.setFixed(fixed);
+    }
+    this.contact.fish(this.fishView.recs.values());
     this.grass.update(this.time, this.player.feet, ['wichura', 'burza'].includes(w.id) ? 2.6 : 1, ['mroz', 'sniezyca'].includes(w.id) ? 0.8 : 0);
     U.lamp.value = L.lampK;
     U.wet.value += (L.wet - U.wet.value) * Math.min(1, dt * (L.wet > U.wet.value ? 0.5 : 0.05));
     for (const l of this.lamps) l.intensity = 9 * L.lampK;
-    this.scene.environmentIntensity = 0.08 + 0.92 * Math.pow(1 - L.night, 1.5);
+    this.fishView.mat.envMapIntensity = 0.15 + 0.85 * Math.pow(1 - L.night, 1.5);
     waterLight.value.setScalar(0.35 + 0.65 * (1 - L.night * 0.75));
     this.light = L;
     this.weatherNow = w;

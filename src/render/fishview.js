@@ -68,10 +68,10 @@ else if (pat == 13) base = mix(base, vec3(0.62, 0.58, 0.52), 0.55 + 0.3 * fh(flo
 else if (pat == 14) { vec3 au = mix(vec3(0.2, 1.0, 0.55), vec3(0.62, 0.3, 1.0), 0.5 + 0.5 * sin(vObj.x * 11.0 + uTime * 1.6)); base = mix(base, au, 0.7); extraEmi += au * 0.4; }
 float vMetal = 0.0;
 float vRough = 0.72;
-if (vari == 1) { base = mix(base, vec3(0.86, 0.9, 0.95), 0.72); vMetal = 0.88; vRough = 0.24; }
-else if (vari == 2) { base = mix(base, vec3(1.0, 0.74, 0.22), 0.82); vMetal = 1.0; vRough = 0.28; }
-else if (vari == 3) { vec3 rb = hsv(fract(vObj.x * 1.4 + vObj.y + uTime * 0.22), 0.75, 1.0); base = mix(base, rb, 0.82); vMetal = 0.55; vRough = 0.3; extraEmi += rb * 0.18; }
-else if (vRar > 1.5) { vMetal = 0.3; vRough = 0.42; }
+if (vari == 1) { base = mix(base, vec3(0.86, 0.9, 0.95), 0.72); vMetal = 0.85; vRough = 0.4; }
+else if (vari == 2) { base = mix(base, vec3(1.0, 0.74, 0.22), 0.82); vMetal = 0.95; vRough = 0.42; }
+else if (vari == 3) { vec3 rb = hsv(fract(vObj.x * 1.4 + vObj.y + uTime * 0.22), 0.75, 1.0); base = mix(base, rb, 0.82); vMetal = 0.55; vRough = 0.42; extraEmi += rb * 0.18; }
+else if (vRar > 1.5) { vMetal = 0.25; vRough = 0.52; }
 diffuseColor.rgb = base;`;
 
 export function fishMaterial() {

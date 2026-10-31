@@ -33,11 +33,11 @@ export function beachiness(x, z) {
 }
 
 function stepped(s) {
-  if (s <= 0) return -0.4 + s * 0.6;
-  const t1 = smooth(0.25, 1.4, s);
-  const t2 = smooth(2.6, 4.2, s);
-  return -0.4 + (LAND * 0.42 + 0.4) * t1 + (LAND * 0.58) * t2;
+  if (s <= 0) return 0.04 + s * 0.32;
+  return 0.04 + 0.48 * smooth(0, 2.6, s) + (LAND - 0.52) * smooth(1.6, 7.2, s);
 }
+
+const HILLS = [[14, -12, 6.5, 1.5], [-15.5, 4, 5.5, 1.1], [9, 15, 4.5, 0.7]];
 
 function beach(s) {
   if (s <= 0) return 0.06 + s * 0.16;
@@ -71,11 +71,12 @@ export function islandHeight(x, z) {
   const b = beachiness(x, z);
   let h = stepped(s) * (1 - b) + beach(s) * b;
   if (s < 0) h = Math.max(-4.5, h);
-  const rim = smooth(3.8, 5.2, s) * (1 - smooth(6.4, 8.2, s)) * smooth(-2, -8, z);
-  const hill = Math.max(0, fbm(x * 0.09 + 9, z * 0.09 - 4, 3, 5) - 0.46) * 6 * rim;
-  h += hill;
+  for (const [hx, hz, hr, hh] of HILLS) {
+    const d2 = ((x - hx) ** 2 + (z - hz) ** 2) / (hr * hr);
+    if (d2 < 4) h += hh * Math.exp(-d2 * 1.6) * smooth(1, 4, s);
+  }
   if (s > 5) h += (noise2(x * 0.12, z * 0.12, 9) - 0.5) * 0.08;
-  if (s > 3.5) h -= 0.05 * (1 - smooth(0.35, 0.85, pathDist(x, z))) * smooth(3.5, 5, s);
+  if (s > 3.5) h -= 0.08 * (1 - smooth(0.35, 0.85, pathDist(x, z))) * smooth(3.5, 5, s);
   return h;
 }
 
@@ -85,10 +86,11 @@ export function isBuildable(x, z) {
 
 const C = (h) => new THREE.Color(h);
 const PAL = {
-  grass: C('#7d9a45'),
-  grass2: C('#728f3e'),
-  grassHi: C('#8fa84e'),
-  meadow: C('#8e9a52'),
+  grass: C('#76925a'),
+  grass2: C('#647f4c'),
+  grassHi: C('#86a062'),
+  meadow: C('#8a9660'),
+  dry: C('#9a9a62'),
   path: C('#a48a62'),
   path2: C('#957c56'),
   earth: C('#8b7152'),
@@ -129,11 +131,14 @@ function colorAt(mx, my, mz, slope, out) {
   }
   if (my < LAND - 0.3 && s < 4.5) return out.copy(PAL.ledge).lerp(PAL.mud, smooth(0.8, 0.35, my) * 0.8).offsetHSL(0, 0, grain);
   const pd = pathDist(mx, mz);
-  const n = fbm(mx * 0.06, mz * 0.06, 3, 21);
-  out.copy(PAL.grass).lerp(n > 0.5 ? PAL.grassHi : PAL.grass2, Math.min(1, Math.abs(n - 0.5) * 2.4));
-  out.lerp(PAL.meadow, smooth(9, 4, s) * 0.55);
+  const n = fbm(mx * 0.13, mz * 0.13, 3, 21);
+  const n2 = fbm(mx * 0.31 + 5, mz * 0.31 - 2, 2, 23);
+  out.copy(PAL.grass).lerp(n > 0.5 ? PAL.grassHi : PAL.grass2, Math.min(1, Math.abs(n - 0.5) * 3.2));
+  out.lerp(PAL.dry, smooth(0.6, 0.78, n2) * 0.7);
+  out.lerp(PAL.meadow, smooth(9, 4, s) * 0.5);
   if (s > 3.5) {
-    const pk = smooth(0.95, 0.45, pd);
+    out.lerp(PAL.grass2, smooth(1.35, 0.95, pd) * (1 - smooth(0.95, 0.6, pd)) * 0.6);
+    const pk = smooth(0.95, 0.5, pd);
     if (pk > 0) out.lerp(tmpC.copy(PAL.path).lerp(PAL.path2, noise2(mx * 0.8, mz * 0.8, 3)), pk);
   }
   return out.offsetHSL(0, 0, grain * 0.6);

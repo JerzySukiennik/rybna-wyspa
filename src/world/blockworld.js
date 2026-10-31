@@ -36,6 +36,7 @@ export class BlockWorld {
     const v = { body: new Instancer(this.scene, vis.body, this.mat) };
     if (vis.strip) v.strip = new Instancer(this.scene, vis.strip, stripMaterial(def.speed || 1.7), { shadow: false });
     if (vis.water) v.water = new Instancer(this.scene, vis.water, flumeWaterMaterial(def.speed || 2.4), { shadow: false, receive: false });
+    if (vis.motor) v.motor = new Instancer(this.scene, vis.motor, this.mat);
     this.views.set(type, v);
     return v;
   }
@@ -77,21 +78,48 @@ export class BlockWorld {
       d: new THREE.Vector3(...p.d).applyQuaternion(quat).normalize(),
     }));
     this.blocks.set(id, b);
+    this.updateMotor(b);
+    for (const u of this.upstream(b)) this.updateMotor(u);
     if (this.onAdd) this.onAdd(b);
     return b;
+  }
+
+  upstream(b) {
+    const out = [];
+    const pin = b.ports.find((p) => p.io === 'in');
+    if (!pin) return out;
+    for (const c of this.blocks.values()) {
+      if (c === b) continue;
+      const po = c.ports.find((p) => p.io === 'out');
+      if (po && po.p.distanceToSquared(pin.p) < 0.0225) out.push(c);
+    }
+    return out;
+  }
+
+  updateMotor(b) {
+    const v = this.views.get(b.rec.t);
+    if (!v || !v.motor || !this.blocks.has(b.id)) return;
+    const po = b.ports.find((p) => p.io === 'out');
+    const linked = po && this.nearPort(po.p, 'in', 0.15, b.id);
+    if (linked) v.motor.remove(b.id);
+    else v.motor.add(b.id, b.mat);
+    this.dirtyBounds.add(b.rec.t);
   }
 
   remove(id, silent) {
     const b = this.blocks.get(id);
     if (!b) return;
+    const ups = this.upstream(b);
     const v = this.views.get(b.rec.t);
     v.body.remove(id);
+    if (v.motor) v.motor.remove(id);
     if (v.strip) v.strip.remove(id);
     if (v.water) v.water.remove(id);
     this.dirtyBounds.add(b.rec.t);
     const zones = this.phys.removeBlock(id);
     for (const [h, bid] of this.byBody) if (bid === id) this.byBody.delete(h);
     this.blocks.delete(id);
+    for (const u of ups) this.updateMotor(u);
     if (this.onRemove && !silent) this.onRemove(b, zones);
     return zones;
   }
@@ -124,12 +152,14 @@ export class BlockWorld {
       v.body.set(b.id, m);
       if (v.strip) v.strip.set(b.id, m);
       if (v.water) v.water.set(b.id, m);
+      if (v.motor && v.motor.index.has(b.id)) v.motor.set(b.id, m);
       if (t >= 1) this.popping.delete(b);
     }
     for (const t of this.dirtyBounds) {
       const v = this.views.get(t);
       if (!v) continue;
       v.body.bounds();
+      if (v.motor) v.motor.bounds();
       if (v.strip) v.strip.bounds();
       if (v.water) v.water.bounds();
     }

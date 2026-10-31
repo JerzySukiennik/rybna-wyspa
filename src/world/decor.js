@@ -134,5 +134,10 @@ export function buildDecor(scene, phys, models, mat, blockMat) {
     scene.add(mesh);
     meshes.push(mesh);
   }
-  return { meshes, lampPos, lamps: [lampPos], count: [...place.values()].reduce((a, l) => a + l.length, 0) };
+  const blobs = [];
+  for (const [id, list] of place) {
+    const r = { willow: 1.6, willow_weeping: 2.1, birch: 1.2, alder: 1.5, alder_row: 2.6, pine: 1.4, bush: 1.0, stump: 0.6, rock_l: 1.2, rock_m: 0.75, log: 0.8 }[id];
+    if (r) for (const it of list) if (it.y > 0.2) blobs.push({ x: it.x, y: it.y, z: it.z, r: r * it.s });
+  }
+  return { meshes, lampPos, lamps: [lampPos], blobs, count: [...place.values()].reduce((a, l) => a + l.length, 0) };
 }

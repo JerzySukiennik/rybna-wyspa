@@ -94,7 +94,7 @@ function booth(g, sellLamps) {
 }
 
 export function buildStructures(scene, phys, mat, models) {
-  const out = { zones: [], shop: null, sell: null, lamps: [] };
+  const out = { zones: [], shop: null, sell: null, lamps: [], blobs: [] };
   const R = phys.R;
 
   const g = new Geo();
@@ -133,7 +133,7 @@ export function buildStructures(scene, phys, mat, models) {
     const rm = (SELL_R + 0.1 + PLAZA_R) / 2;
     phys.makeCollider({ t: 'box', hx: (PLAZA_R - SELL_R - 0.1) / 2, hy: 0.19, hz: Math.PI * PLAZA_R / 20 + 0.05, pos: [Math.cos(a) * rm, -0.07, Math.sin(a) * rm], quat: [q.x, q.y, q.z, q.w], fr: 0.8 }, body);
   }
-  phys.makeCollider({ t: 'box', hx: 0.95, hy: 1.3, hz: 1.15, pos: [bx, 1.42, bz], quat: [0, 0, 0, 1] }, body);
+  const boothCol = phys.makeCollider({ t: 'box', hx: 0.95, hy: 1.3, hz: 1.15, pos: [bx, 1.42, bz], quat: [0, 0, 0, 1] }, body);
   const grate = R.ColliderDesc.cylinder(0.05, 1.0).setTranslation(0, SELL_NECK + 0.35, 0).setCollisionGroups(groups(G.WORLD, G.PLAYER));
   phys.world.createCollider(grate, body);
   const sensor = R.ColliderDesc.cuboid(SELL_OUT + 0.05, 0.25, SELL_OUT + 0.05).setTranslation(0, SELL_NECK - 0.05, 0).setSensor(true)
@@ -141,17 +141,30 @@ export function buildStructures(scene, phys, mat, models) {
   const sc = phys.world.createCollider(sensor, body);
   const z = { kind: 'sell', tag: 'skup', handle: sc.handle, col: sc, body };
   phys.zoneOf.set(sc.handle, z);
-  out.sell = { pos: SPOTS.sell.clone(), top: SPOTS.sell.y + SELL_TOP, r: SELL_R, mesh: sellMesh };
+  out.sell = { pos: SPOTS.sell.clone(), top: SPOTS.sell.y + SELL_TOP, r: SELL_R, mesh: sellMesh, body, booth: boothCol.handle };
 
   const W = 4.4, D = 3.0, YAW = -Math.PI / 2;
   const sq = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), YAW);
   const s = new Geo();
   s.box(0, 0.09, 0, W + 0.8, 0.18, D + 0.9, K.woodD, { top: K.wood });
-  for (let i = 0; i < 9; i++) s.box(-W / 2 - 0.4 + (i + 0.5) * ((W + 0.8) / 9), 0.185, 0, (W + 0.8) / 9 - 0.03, 0.01, D + 0.9, i % 2 ? K.wood : K.woodL);
+  const plank = new THREE.Color();
+  const pv = (base, i) => '#' + plank.set(base).offsetHSL(0, 0, (Math.sin(i * 12.9898) * 43758.5453 % 1) * 0.08 - 0.04).getHexString();
+  for (let i = 0; i < 9; i++) s.box(-W / 2 - 0.4 + (i + 0.5) * ((W + 0.8) / 9), 0.185, 0, (W + 0.8) / 9 - 0.03, 0.01, D + 0.9, pv(i % 2 ? K.wood : K.woodL, i));
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) s.box(sx * (W / 2 - 0.1), 1.5, sz * (D / 2 - 0.1), 0.18, 2.7, 0.18, K.woodD);
   s.box(-W / 2 + 0.1, 1.5, 0.15, 0.1, 2.7, D - 0.5, K.plank, { side: K.woodL });
   s.box(W / 2 - 0.1, 1.5, 0.15, 0.1, 2.7, D - 0.5, K.plank, { side: K.woodL });
   s.box(0, 1.5, D / 2 - 0.1, W - 0.3, 2.7, 0.1, K.plank);
+  for (let i = 0; i < 10; i++) s.box(-W / 2 + 0.35 + i * ((W - 0.7) / 9), 1.5, D / 2 - 0.16, 0.02, 2.66, 0.01, K.woodD);
+  for (const sx of [-1, 1]) for (let i = 0; i < 6; i++) s.box(sx * (W / 2 - 0.16), 1.5, -D / 2 + 0.75 + i * 0.36, 0.01, 2.66, 0.02, K.woodD);
+  s.box(-1.05, 1.72, D / 2 - 0.17, 1.05, 0.72, 0.03, '#26302b');
+  s.box(-1.05, 1.72, D / 2 - 0.155, 1.15, 0.82, 0.02, '#6f5536');
+  for (let i = 0; i < 4; i++) s.box(-1.12 + (i % 2) * 0.12, 1.62 - i * 0.11, D / 2 - 0.19, 0.6 - (i % 2) * 0.2, 0.025, 0.005, '#d9d4c4');
+  for (let i = 0; i <= 6; i++) s.box(0.55 + i * 0.16, 1.6, D / 2 - 0.2, 0.012, 1.0, 0.012, '#3b423c');
+  for (let j = 0; j <= 6; j++) s.box(1.03, 1.1 + j * 0.16 + Math.sin(j) * 0.02, D / 2 - 0.2, 0.98, 0.012, 0.012, '#3b423c');
+  for (const [bx2, bz2] of [[1.45, 0.55], [1.12, 0.78]]) {
+    s.cyl(bx2, 0.19, bz2, 0.17, 0.14, 0.32, 10, '#8f9aa0', { top: '#5d666c' });
+    s.ring(bx2, 0.5, bz2, 0.165, 0.18, 0.02, 10, '#5d666c');
+  }
   for (const sx of [-1, 1]) {
     s.box(sx * (W / 2 - 0.02), 1.75, 0.2, 0.03, 0.74, 0.94, K.woodD);
     s.box(sx * (W / 2 + 0.005), 1.75, 0.2, 0.02, 0.62, 0.82, '#ffb347', { emit: 2.5 });
@@ -169,10 +182,13 @@ export function buildStructures(scene, phys, mat, models) {
   for (let i = 0; i < 8; i++) {
     const x0 = -W / 2 - 0.3 + i * ((W + 0.6) / 8), x1 = x0 + (W + 0.6) / 8;
     const col = i % 2 ? '#efe7d4' : '#2a8f86';
-    s.quadN([x0, 2.55, -D / 2 - 0.05], [x1, 2.55, -D / 2 - 0.05], [x1, 2.12, -D / 2 - 1.05], [x0, 2.12, -D / 2 - 1.05], [0, 1, -0.5], col);
-    s.quadN([x0, 2.12, -D / 2 - 1.05], [x1, 2.12, -D / 2 - 1.05], [x1, 1.98, -D / 2 - 1.05], [x0, 1.98, -D / 2 - 1.05], [0, 0, -1], col);
+    s.quadN([x0, 2.27, -D / 2 - 0.05], [x1, 2.27, -D / 2 - 0.05], [x1, 1.86, -D / 2 - 1.05], [x0, 1.86, -D / 2 - 1.05], [0, 1, -0.5], col);
+    s.quadN([x0, 2.24, -D / 2 - 0.05], [x1, 2.24, -D / 2 - 0.05], [x1, 1.83, -D / 2 - 1.05], [x0, 1.83, -D / 2 - 1.05], [0, -1, 0.5], i % 2 ? '#cfc7b4' : '#1f6f68');
+    const xm = (x0 + x1) / 2;
+    s.triN([x0, 1.86, -D / 2 - 1.052], [x1, 1.86, -D / 2 - 1.052], [xm, 1.68, -D / 2 - 1.052], [0, 0, -1], col);
+    s.triN([x0, 1.86, -D / 2 - 1.048], [x1, 1.86, -D / 2 - 1.048], [xm, 1.68, -D / 2 - 1.048], [0, 0, 1], col);
   }
-  for (const sx of [-1, 1]) s.box(sx * (W / 2 + 0.25), 2.05, -D / 2 - 1.0, 0.04, 0.12, 0.04, IRON);
+  for (const sx of [-1, 1]) s.line([sx * (W / 2 + 0.25), 1.86, -D / 2 - 1.03], [sx * (W / 2 - 0.05), 2.45, -D / 2 + 0.02], 0.018, IRON, 4);
   const rh = 2.85, ridge = 4.15, ov = 0.45;
   for (const sz of [-1, 1]) s.quadN([-W / 2 - ov, rh, sz * (D / 2 + ov)], [W / 2 + ov, rh, sz * (D / 2 + ov)], [W / 2 + ov, ridge, 0], [-W / 2 - ov, ridge, 0], [0, 1, sz], '#4b5e52');
   for (const sz of [-1, 1]) s.quadN([-W / 2 - ov, rh - 0.12, sz * (D / 2 + ov)], [W / 2 + ov, rh - 0.12, sz * (D / 2 + ov)], [W / 2 + ov, ridge - 0.12, 0], [-W / 2 - ov, ridge - 0.12, 0], [0, -1, -sz], K.woodD);
@@ -194,8 +210,11 @@ export function buildStructures(scene, phys, mat, models) {
   for (let i = 0; i < 3; i++) s.at(W / 2 + 0.05 - i * 0.12, 0.2, D / 2 - 0.3 - i * 0.15, 0, 0, 0.12 + i * 0.05).box(0, 1.25, 0, 0.035, 2.5, 0.035, i === 1 ? '#2f3438' : '#8a5c34').pop();
   s.box(-W / 2 - 0.55, 2.42, -D / 2 + 0.1, 1.3, 0.07, 0.07, IRON);
   s.at(-W / 2 - 0.12, 2.22, -D / 2 + 0.1, 0, 0, -0.75).box(0, 0, 0, 0.5, 0.05, 0.05, IRON).pop();
-  for (const dx of [-0.95, -0.45]) s.box(-W / 2 + dx, 2.24, -D / 2 + 0.1, 0.015, 0.36, 0.015, IRON);
-  const shopLamp = lantern(s, W / 2 - 0.1, 0.18, -D / 2 - 0.12, 2.35, 0.5, -Math.PI / 2);
+  for (const dx of [-0.95, -0.45]) {
+    s.box(-W / 2 + dx, 2.24, -D / 2 + 0.1, 0.028, 0.36, 0.028, IRON);
+    s.torus(-W / 2 + dx, 2.06, -D / 2 + 0.1, 0.035, 0.01, 8, 3, IRON);
+  }
+  const shopLamp = lantern(s, W / 2 + 0.6, 0.0, -D / 2 + 0.35, 2.5, 0.45, Math.PI);
   const shopMesh = new THREE.Mesh(s.geometry(), mat);
   shopMesh.position.copy(SPOTS.shop);
   shopMesh.quaternion.copy(sq);
@@ -236,6 +255,8 @@ export function buildStructures(scene, phys, mat, models) {
   for (const [x, zz] of [[W / 2 + 0.25, -D / 2 - 0.1], [W / 2 + 0.25, -D / 2 + 0.55], [-W / 2 - 0.3, D / 2 - 0.2]]) box(0.28, 0.32, 0.28, x, 0.5, zz);
   box(0.3, 0.5, 0.3, -W / 2 - 0.35, 0.5, -D / 2 + 0.1);
   const front = new THREE.Vector3(0, 1.1, -D / 2 - 0.7).applyQuaternion(sq).add(SPOTS.shop);
+  out.blobs.push({ x: SPOTS.shop.x, y: SPOTS.shop.y, z: SPOTS.shop.z, w: W + 0.8, l: D + 0.9, yaw: YAW });
+  out.blobs.push({ x: SPOTS.sell.x + bx, y: SPOTS.sell.y + 0.12, z: SPOTS.sell.z + bz, w: 1.9, l: 2.3 });
   out.shop = { pos: front, mesh: shopMesh };
 
   const post = new Geo();

@@ -185,7 +185,7 @@ export class Hud {
       for (const i of f.tr) chips.push(`<span class="chip">${esc(TRAITS[i].name)}${TRAITS[i].m !== 1 ? ` ×${String(TRAITS[i].m).replace('.', ',')}` : ''}</span>`);
       if (f.up) chips.push(`<span class="chip up">+${Math.round(f.up * 100)}% z maszyn</span>`);
       const state = f.cold > 0 ? 'zimna' : f.wet ? 'w wodzie' : f.onIce ? 'na lodzie' : `${fresh}%`;
-      el.style.setProperty('--rc', R.color === '#b9c2cc' ? '#6b7785' : R.color);
+      el.style.setProperty('--rc', R.color);
       const img = this.icons ? `<img src="${this.icons.fish(f.sp)}" alt="">` : '<span></span>';
       el.innerHTML = `${img}<div><div class="nm">${esc(S.name)}</div><div class="lat">${esc(S.latin || 'gatunek nieopisany')}</div><div class="rar">${R.name}</div></div><div class="val"><span>${fmtKg(f.w)} · ${state}</span><b>${fmtZl(v)}</b></div>${chips.length ? `<div class="tr">${chips.join('')}</div>` : ''}`;
       el.classList.remove('hidden');

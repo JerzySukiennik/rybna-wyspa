@@ -81,11 +81,20 @@ function straightBelt(g, w, l, def) {
     bolts(g, s * (hw + 0.002), top - 0.03, -l / 2 + 0.2, l / 2 - 0.2, 0.4, K.metalD);
   }
   g.box(0, top - 0.035, 0, w - 0.12, 0.06, l - 0.06, K.rubber);
-  for (const e of [-1, 1]) g.line([-(hw - 0.08), top - 0.045, e * (l / 2 - 0.045)], [hw - 0.08, top - 0.045, e * (l / 2 - 0.045)], 0.045, K.galvL, 8);
+  for (const e of [-1, 1]) {
+    g.line([-(hw + 0.015), top - 0.07, e * (l / 2 - 0.07)], [hw + 0.015, top - 0.07, e * (l / 2 - 0.07)], 0.07, K.galvL, 10);
+    for (const sx of [-1, 1]) g.line([sx * (hw + 0.015), top - 0.07, e * (l / 2 - 0.07)], [sx * (hw + 0.04), top - 0.07, e * (l / 2 - 0.07)], 0.035, K.metalD, 6);
+  }
   for (let z = -l / 2 + 0.25; z <= l / 2 - 0.24; z += Math.abs(z) > l / 2 - 0.6 ? 0.25 : 0.5) g.line([-(hw - 0.1), top - 0.13, z], [hw - 0.1, top - 0.13, z], 0.03, K.metalD, 6);
   const ts = l <= 1.01 ? [0] : l <= 2.01 ? [-l / 2 + 0.35, l / 2 - 0.35] : [-l / 2 + 0.45, 0, l / 2 - 0.45];
   for (const z of ts) trestle(g, z, w, top - 0.08);
-  motor(g, hw + 0.01, -l / 2 + 0.2, def);
+}
+
+function beltMotor(def) {
+  const g = new Geo();
+  const hw = def.dim[0] / 2;
+  motor(g, hw + 0.04, -def.dim[2] / 2 + 0.07, def);
+  return g.geometry();
 }
 
 function stripStraight(w, l) {
@@ -616,11 +625,11 @@ export function blockVisual(id) {
   if (vcache.has(id)) return vcache.get(id);
   const def = BLOCK_BY_ID[id];
   const g = new Geo();
-  const out = { body: null, strip: null, water: null, spawn: null, stripLen: 0 };
+  const out = { body: null, strip: null, water: null, spawn: null, motor: null, stripLen: 0 };
   const [w, h, l] = def.dim;
   if (def.kind === 'belt') {
     if (def.curve) { curveBelt(g, def); out.strip = stripCurve(def.curve); out.stripLen = (Math.PI / 2) * CURVE_R; }
-    else { straightBelt(g, w, l, def); out.strip = stripStraight(w, l); out.stripLen = l; }
+    else { straightBelt(g, w, l, def); out.strip = stripStraight(w, l); out.stripLen = l; out.motor = beltMotor(def); }
   } else if (def.kind === 'flume') {
     if (def.curve) flumeCurve(g, def.curve); else flumeStraight(g, w, l);
     out.water = flumeWaterGeo(def.curve ? 0 : l, def.curve || 0);

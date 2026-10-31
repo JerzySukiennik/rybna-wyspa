@@ -216,6 +216,25 @@ function fishSheet(ids, label, cols = 3, rows = 6) {
   renderViews();
 }
 
+function smallSheet() {
+  const stage = makeStage(1);
+  title('Ryby w 60 px (bok) i 120 px');
+  const cols = 6, top = 30, cw = Math.floor(W / cols), ch = 80;
+  FISH_IDS.forEach((id, i) => {
+    const cx = (i % cols) * cw, cy = top + Math.floor(i / cols) * ch;
+    const [lying] = fishPair(id);
+    stage.scene.add(lying);
+    const g1 = lying.clone();
+    g1.userData.model = true;
+    stage.scene.add(g1);
+    views.push({ stage, obj: lying, rect: { x: cx + 4, y: cy + 14, w: 64, h: 62 }, dir: SIDE, up: SIDE_UP, pad: 0.02, cam: new THREE.OrthographicCamera(), persp: 0 });
+    views.push({ stage, obj: g1, rect: { x: cx + 76, y: cy + 4, w: cw - 80, h: ch - 6 }, dir: SIDE, up: SIDE_UP, pad: 0.04, cam: new THREE.OrthographicCamera(), persp: 0 });
+    const s = SPECIES_BY_ID[id];
+    addCell(cx, cy, cw, ch, `<span style="font-size:11px">${s ? s.name : id}</span>`);
+  });
+  renderViews();
+}
+
 function oneFish(id) {
   const stage = makeStage(1);
   const [lying, standing] = fishPair(id);
@@ -393,6 +412,7 @@ try {
   else if (SHEET === 'fish2') fishSheet(FISH_IDS.slice(17), 'Ryby 18-34 (bok i 3/4)');
   else if (SHEET === 'avatar') avatarSheet();
   else if (SHEET === 'deco') decoSheet();
+  else if (SHEET === 'small') smallSheet();
   else if (Q.get('ids')) { const ids = Q.get('ids').split(','); const c = ids.length > 4 ? 3 : 2; fishSheet(ids, ids.join(', '), c, Math.ceil(ids.length / c)); }
   else if (ONE) oneFish(ONE);
   else freeScene();

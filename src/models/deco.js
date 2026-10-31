@@ -1,5 +1,5 @@
 // Rybna Wyspa: low-poly decorations of the Narew bank (trees, reeds, rocks, lily, boat, pier) as vertex-coloured geometry.
-import { Soup, tube, blob, hexa, C, shade, mixC, hh, norm, add, mul, sub } from './soup.js';
+import { Soup, tube, blob, hexa, ridge, C, shade, mixC, hh, lerp, norm, add, mul, sub } from './soup.js';
 
 export const DECO_IDS = ['willow', 'willow_weeping', 'birch', 'alder', 'alder_row', 'pine', 'bush', 'reeds', 'cattail', 'rock_s', 'rock_m', 'rock_l', 'grass', 'flowers', 'log', 'stump', 'lily', 'boat', 'pier'];
 
@@ -95,74 +95,85 @@ function willow() {
 function willowWeeping() {
   const S = new Soup();
   const barkC = (i, j) => pick([C('#5e554a'), C('#6a5f52'), C('#53493f')], hh(i * 7 + j, 2, 6)).clone().multiplyScalar(0.92 + 0.16 * hh(j, i, 4));
-  tube(S, [[0, 0, 0], [0.04, 0.9, 0.02], [0.1, 1.8, 0.05], [0.14, 2.3, 0.06]], [0.46, 0.36, 0.33, 0.34], 8, barkC, 0, 0, { twist: 0.2 });
-  const base = [0.14, 2.25, 0.06];
-  const limbs = [[0.4, 2.2, 1.0], [2.5, 2.4, 0.9], [4.4, 2.1, 1.05], [1.4, 1.2, 1.25]];
-  const tops = [];
-  for (const [a, out, up] of limbs) {
+  tube(S, [[0, 0, 0], [0.06, 1.0, 0.03], [0.16, 2.0, 0.06], [0.2, 2.45, 0.07]], [0.46, 0.37, 0.33, 0.3], 7, barkC, 0, 0, { twist: 0.2 });
+  const top = [0.2, 2.4, 0.07];
+  const leaf = [C('#a6b46e'), C('#96a660'), C('#b4bf80'), C('#8c9c58')];
+  const limbs = [[0.3, 1.0], [1.55, 0.92], [2.75, 1.08], [3.95, 0.95], [5.2, 1.04]];
+  limbs.forEach(([a, k], n) => {
     const d = [Math.cos(a), 0, Math.sin(a)];
-    const p1 = add(base, add(mul(d, out * 0.35), [0, up * 1.5, 0]));
-    const p2 = add(base, add(mul(d, out * 0.8), [0, up * 2.9, 0]));
-    const p3 = add(base, add(mul(d, out), [0, up * 3.35, 0]));
-    tube(S, [base, p1, p2, p3], [0.2, 0.14, 0.09, 0.05], 6, barkC, 0, 0);
-    tops.push(p3);
-  }
-  const pal = [C('#a4b06c'), C('#96a45e'), C('#b2bc7e'), C('#8a9a58')];
-  const crownY = 5.9;
-  blob(S, [0.2, crownY - 0.15, 0.05], [2.5, 0.75, 2.4], 1, (m, w, i) => leafCol(pal, m, w, i, 41, 0.25), { jitter: 0.18, seed: 41, flatBottom: -0.2 });
-  const ring = (n, R, y0, len, seed) => {
-    for (let i = 0; i < n; i++) {
-      const a = (i / n) * Math.PI * 2 + (hh(i, 1, seed) - 0.5) * 0.25;
-      const r = R * (0.88 + 0.24 * hh(i, 2, seed));
-      const out = [Math.cos(a), 0, Math.sin(a)];
-      const side = [-Math.sin(a), 0, Math.cos(a)];
-      const top = [0.2 + out[0] * r, y0 - 0.25 * (r / R) ** 2 + 0.3 * hh(i, 3, seed), 0.05 + out[2] * r];
-      const L = len * (0.8 + 0.35 * hh(i, 4, seed));
-      const sway = (hh(i, 5, seed) - 0.5) * 0.5;
-      const pts = [0, 0.25, 0.55, 0.82, 1].map((f) => add(top, add(mul(out, 0.55 * Math.sin(f * 2.2)), add(mul(side, sway * f * f), [0, -L * f, 0]))));
-      const w = 0.34 + 0.12 * hh(i, 6, seed);
-      const c = pick(pal, hh(i, 7, seed));
-      ribbon(S, pts, [w, w * 1.1, w * 0.9, w * 0.55, 0], side, (k) => mixC(c, C('#c4ca90'), k * 0.12).multiplyScalar(1 - (k === 0 ? 0.08 : 0)));
+    const pts = [top, add(top, add(mul(d, 0.7 * k), [0, 1.5 * k, 0])), add(top, add(mul(d, 1.7 * k), [0, 2.5 * k, 0])), add(top, add(mul(d, 2.6 * k), [0, 2.6 * k, 0])), add(top, add(mul(d, 3.25 * k), [0, 2.05 * k, 0]))];
+    tube(S, pts, [0.17, 0.12, 0.08, 0.05, 0.02], 4, barkC, 0, 0);
+    blob(S, add(vl(pts[2], pts[3], 0.35), [0, 0.05, 0]), [0.9 * k, 0.5, 0.75 * k], 0, (m, w, i) => leafCol(leaf, m, w, i, 70 + n, 0.25), { jitter: 0.34, seed: 70 + n });
+    const side = [-Math.sin(a), 0, Math.cos(a)];
+    for (let i = 0; i < 19; i++) {
+      const f = 0.18 + 0.82 * ((i + 0.5 + (hh(i, n, 3) - 0.5) * 0.6) / 19);
+      const seg = Math.min(3, Math.floor(f * 4));
+      const q = vl(pts[seg], pts[seg + 1], f * 4 - seg);
+      const off = (hh(i, n, 5) - 0.5) * 0.7;
+      const p0 = add(q, mul(side, off));
+      const L = [1.8, 2.8, 3.8][Math.floor(hh(i, n, 7) * 3)] * (0.9 + 0.2 * hh(i, n, 9));
+      const lenMax = Math.max(0.6, p0[1] - 0.35);
+      const LL = Math.min(L, lenMax);
+      const out = mul(d, 0.12 + 0.2 * hh(i, n, 11));
+      const w = 0.045 + 0.015 * hh(i, n, 13);
+      const strip = [p0, add(p0, add(out, [0, -LL * 0.5, 0])), add(p0, add(mul(out, 1.4), [0, -LL, 0]))];
+      const c = pick(leaf, hh(i, n, 15));
+      ribbon(S, strip, [w, w * 1.1, 0], [side[0] + d[0] * 0.3, 0, side[2] + d[2] * 0.3], (k2) => (k2 ? c : shade(c, 0.92)));
     }
-  };
-  ring(30, 2.85, crownY, 4.3, 7);
-  ring(14, 1.7, crownY + 0.35, 3.2, 8);
+  });
   return S;
 }
 
 function birch() {
   const S = new Soup();
-  const white = C('#e6e2d8'), black = C('#2a2722'), grey = C('#c4beb2');
-  const col = (i, j) => {
-    if (i < 2) return hh(i * 9 + j, 1, 2) < 0.55 + (1 - i) * 0.3 ? black : shade(grey, 0.72);
-    const h = hh(i * 7 + j, 3, 11);
-    return h < 0.2 ? black : h < 0.32 ? grey : white.clone().multiplyScalar(0.96 + 0.06 * hh(j, i, 5));
-  };
+  const white = C('#ebe7de'), black = C('#26231f'), grey = C('#cfc9bd');
   const pts = [];
-  for (let i = 0; i <= 9; i++) pts.push([0.18 * Math.sin(i * 0.45) * (i / 9), i * 0.86, 0.1 * (i / 9) ** 2]);
-  tube(S, pts, pts.map((_, i) => 0.17 * (1 - i / 10.5) + 0.012), 6, col, 0, 0);
-  const brC = (i, j) => (hh(i, j, 4) < 0.25 ? black : shade(white, 0.88));
-  const pal = [C('#93b468'), C('#a2c076'), C('#86a85e'), C('#acc684')];
-  const hang = [C('#9cba70'), C('#8eae64')];
-  const branches = [[3.4, 0.4, 1.7, 0.55], [4.1, 2.5, 1.6, 0.6], [4.8, 4.3, 1.5, 0.65], [5.5, 1.5, 1.3, 0.75], [6.2, 3.4, 1.1, 0.8], [6.9, 5.4, 0.9, 0.9]];
-  branches.forEach(([y, a, l, up], n) => {
+  for (let i = 0; i <= 9; i++) pts.push([0.16 * Math.sin(i * 0.5) * (i / 9), i * 0.86, 0.09 * (i / 9) ** 2]);
+  const rad = (i) => 0.17 * (1 - i / 10.5) + 0.012;
+  tube(S, pts, pts.map((_, i) => rad(i)), 6, (i, j) => (i === 0 ? (hh(j, 1, 2) < 0.7 ? black : shade(grey, 0.7)) : (hh(i * 7 + j, 3, 11) < 0.12 ? grey : white).clone().multiplyScalar(0.95 + 0.07 * hh(j, i, 5))), 0, 0);
+  const onTrunk = (y, a) => {
+    const k = Math.min(8, Math.floor(y / 0.86)), f = y / 0.86 - k;
+    const c = vl(pts[k], pts[k + 1], f), r = lerp(rad(k), rad(k + 1), f) * 1.02;
+    const n = [Math.cos(a), 0, Math.sin(a)];
+    return { p: add(c, mul(n, r)), n, t: [-Math.sin(a), 0, Math.cos(a)], r };
+  };
+  for (let i = 0; i < 26; i++) {
+    const y = 0.6 + 5.6 * hh(i, 1, 41), a = hh(i, 2, 41) * 6.283;
+    const m = onTrunk(y, a);
+    const L = (0.05 + 0.1 * hh(i, 3, 41)) * Math.min(1, m.r / 0.12);
+    const half = L / 2, sag = (half * half) / (2 * m.r);
+    const e0 = add(add(m.p, mul(m.t, -half)), mul(m.n, -sag)), e1 = add(add(m.p, mul(m.t, half)), mul(m.n, -sag));
+    ridge(S, [e0, e1], [norm(sub(e0, sub(m.p, mul(m.n, m.r)))), norm(sub(e1, sub(m.p, mul(m.n, m.r))))], 0.006 + 0.004 * hh(i, 4, 41), 0.005 + sag, black, 0, 0, false);
+  }
+  for (let i = 0; i < 9; i++) {
+    const y = 0.4 + 4.8 * hh(i, 5, 43), a = hh(i, 6, 43) * 6.283;
+    const m = onTrunk(y, a);
+    const r = (0.03 + 0.03 * hh(i, 7, 43)) * Math.min(1, m.r / 0.12);
+    const [t1, t2] = [m.t, [0, 1, 0]];
+    const q = [0, 1, 2, 3].map((k) => add(m.p, add(mul(t1, Math.cos(k * 1.571) * r * 1.6), mul(t2, Math.sin(k * 1.571) * r * (0.7 + 0.4 * hh(i, k, 9))))));
+    const apex = add(m.p, mul(m.n, 0.008));
+    for (let k = 0; k < 4; k++) S.tri(add(q[k], mul(m.n, -0.01)), add(q[(k + 1) % 4], mul(m.n, -0.01)), apex, black, 0, m.n);
+  }
+  const brC = (i, j) => (hh(i, j, 4) < 0.3 ? black : shade(white, 0.86));
+  const pal = [C('#a8c47a'), C('#b5ce8a'), C('#9cba6e'), C('#bcd394')];
+  const hang = [C('#a6c07a'), C('#98b46c')];
+  const crowns = [[3.3, 0.5, 1.7, 0.5, 0.95, 0.95], [4.0, 2.6, 1.3, 0.62, 0.72, 1.1], [4.7, 4.4, 1.6, 0.6, 1.05, 0.9], [5.5, 1.3, 1.0, 0.78, 0.66, 1.05], [6.3, 3.6, 0.9, 0.85, 0.85, 0.95], [7.0, 5.6, 0.6, 1.0, 0.6, 1.0]];
+  crowns.forEach(([y, a, l, up, sz, fl], n) => {
     const k = Math.min(8, Math.floor(y / 0.86));
     const p0 = vl(pts[k], pts[k + 1], y / 0.86 - k);
     const d = norm([Math.cos(a), up, Math.sin(a)]);
     const p1 = add(p0, mul(d, l * 0.6));
-    const p2 = add(p1, mul(norm(add(d, [0, -0.5, 0])), l * 0.5));
-    tube(S, [p0, p1, p2], [0.055, 0.035, 0.012], 4, brC, 0, 0);
-    const cc = add(p2, [0, 0.1, 0]);
-    blob(S, cc, [1.0 - n * 0.05, 0.8, 0.95 - n * 0.05], 1, (m, w, i) => leafCol(pal, m, w, i, 50 + n, 0.25), { jitter: 0.32, seed: 50 + n });
-    for (let t = 0; t < 3; t++) {
-      const ang = a + (t - 1) * 0.9;
-      const q = add(cc, [Math.cos(ang) * 0.5, -0.25, Math.sin(ang) * 0.5]);
-      const side = [-Math.sin(ang), 0, Math.cos(ang)];
-      const L = 1.1 + 0.6 * hh(n, t, 3);
-      ribbon(S, [q, add(q, [Math.cos(ang) * 0.12, -L * 0.5, Math.sin(ang) * 0.12]), add(q, [Math.cos(ang) * 0.16, -L, Math.sin(ang) * 0.16])], [0.26, 0.2, 0], side, () => pick(hang, hh(n, t, 7)));
+    const p2 = add(p1, mul(norm(add(d, [0, -0.45, 0])), l * 0.5));
+    tube(S, [p0, p1, p2], [0.05, 0.032, 0.012], 4, brC, 0, 0);
+    const cc = add(p2, [0, 0.12, 0]);
+    blob(S, cc, [0.95 * sz, 0.78 * sz * fl, 0.85 * sz], 1, (m, w, i) => leafCol(pal, m, w, i, 50 + n, 0.22), { jitter: 0.38, seed: 50 + n });
+    for (let t = 0; t < 2; t++) {
+      const ang = a + (t - 0.5) * 1.2;
+      const q = add(cc, [Math.cos(ang) * 0.55 * sz, -0.3 * sz, Math.sin(ang) * 0.55 * sz]);
+      const L = 1.0 + 0.7 * hh(n, t, 3);
+      ribbon(S, [q, add(q, [Math.cos(ang) * 0.1, -L * 0.55, Math.sin(ang) * 0.1]), add(q, [Math.cos(ang) * 0.14, -L, Math.sin(ang) * 0.14])], [0.2, 0.15, 0], [-Math.sin(ang), 0, Math.cos(ang)], () => pick(hang, hh(n, t, 7)));
     }
   });
-  blob(S, add(pts[9], [0, 0.3, 0]), [0.8, 0.95, 0.78], 1, (m, w, i) => leafCol(pal, m, w, i, 60, 0.22), { jitter: 0.3, seed: 60 });
   return S;
 }
 
@@ -170,37 +181,45 @@ function vl(a, b, t) {
   return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
 }
 
-function alderInto(S, o, sc, seed, full) {
+function alderInto(S, o, sc, seed, nb, details) {
   const barkC = bark([C('#4a4640'), C('#3f3c37'), C('#55504a')], 3 + seed);
   const P = (p) => [o[0] + p[0] * sc, o[1] + p[1] * sc, o[2] + p[2] * sc];
-  const pts = bend([[0, 0, 0], [0, 1.4, 0], [0, 3.0, 0], [0, 4.6, 0], [0, 6.4, 0]], [0.01 * (hh(seed, 1) - 0.5), 0.01 * (hh(seed, 2) - 0.5)]).map(P);
-  tube(S, pts, [0.25, 0.2, 0.16, 0.11, 0.05].map((r) => r * sc), full ? 7 : 6, barkC, 0, 0);
-  if (full) {
-    for (const [y, a] of [[2.6, 0.9], [3.3, 3.4], [4.0, 5.2]]) {
-      const d = norm([Math.cos(a), 0.7, Math.sin(a)]);
-      const p0 = P([0, y, 0]);
-      tube(S, [p0, add(p0, mul(d, 0.8 * sc)), add(p0, mul(d, 1.4 * sc))], [0.07 * sc, 0.045 * sc, 0.02 * sc], 4, barkC, 0, 0);
-    }
+  const lean = [0.12 * (hh(seed, 1) - 0.5), 0, 0.12 * (hh(seed, 2) - 0.5)];
+  const pts = [[0, 0, 0], [lean[0], 1.6, lean[2]], [lean[0] * 2, 3.4, lean[2] * 2], [lean[0] * 3, 5.2, lean[2] * 3], [lean[0] * 3.5, 6.8, lean[2] * 3.5]].map(P);
+  tube(S, pts, [0.26, 0.2, 0.15, 0.1, 0.04].map((r) => r * sc), nb > 4 ? 7 : 6, barkC, 0, 0);
+  const pal = [C('#46683a'), C('#3e5f33'), C('#507440'), C('#39572f')];
+  for (let b = 0; b < nb; b++) {
+    const y = 2.3 + (b / Math.max(1, nb - 1)) * 3.6 + (hh(b, 3, seed) - 0.5) * 0.5;
+    const a = b * 2.4 + seed * 1.3;
+    const reach = (2.0 - (b / nb) * 0.9) * (0.85 + 0.3 * hh(b, 4, seed));
+    const d = norm([Math.cos(a), 0.55 + 0.25 * hh(b, 5, seed), Math.sin(a)]);
+    const k = Math.min(3, Math.floor(y / 1.7));
+    const p0 = vl(pts[k], pts[k + 1], clamp01((y * sc + o[1] - pts[k][1]) / (pts[k + 1][1] - pts[k][1])));
+    const p1 = add(p0, mul(d, reach * 0.55 * sc));
+    const p2 = add(p1, mul(norm(add(d, [0, 0.3, 0])), reach * 0.5 * sc));
+    tube(S, [p0, p1, p2], [0.08 * sc, 0.05 * sc, 0.022 * sc], nb > 4 ? 4 : 3, barkC, 0, 0);
+    const r = (1.45 - 0.35 * (b / nb)) * (0.85 + 0.3 * hh(b, 6, seed)) * sc;
+    blob(S, add(p2, [0, 0.25 * sc, 0]), [r, r * 0.72, r * 0.92], details[b] ?? 1, (m, w, i) => leafCol(pal, m, w, i, 90 + b + seed * 10, 0.32), { jitter: 0.24, seed: 90 + b + seed * 10 });
   }
-  const pal = [C('#4e7238'), C('#587c40'), C('#466632'), C('#628446')];
-  const puffs = [[0, 4.2, 0, 1.75, 1.6, 1.7], [0.15, 5.9, -0.1, 1.45, 1.4, 1.4], [-0.1, 7.2, 0.1, 0.95, 1.05, 0.95], [0.9, 3.4, 0.6, 1.0, 0.85, 0.95]];
-  puffs.slice(0, full ? 4 : 3).forEach(([x, y, z, rx, ry, rz], k) => {
-    const sd = 3 + k + seed * 10;
-    blob(S, P([x, y, z]), [rx * sc, ry * sc, rz * sc], 1, (m, w, i) => leafCol(pal, m, w, i, sd, 0.3), { jitter: 0.17, seed: sd });
-  });
+  const tr = (1.05 + 0.2 * hh(seed, 8)) * sc;
+  blob(S, add(pts[4], [0, 0.1 * sc, 0]), [tr, tr * 0.85, tr], details[nb] ?? 1, (m, w, i) => leafCol(pal, m, w, i, 99 + seed * 10, 0.3), { jitter: 0.24, seed: 99 + seed * 10 });
+}
+
+function clamp01(v) {
+  return v < 0 ? 0 : v > 1 ? 1 : v;
 }
 
 function alder() {
   const S = new Soup();
-  alderInto(S, [0, 0, 0], 1, 0, true);
+  alderInto(S, [0, 0, 0], 1, 0, 6, [1, 1, 1, 1, 1, 1, 1]);
   return S;
 }
 
 function alderRow() {
   const S = new Soup();
-  alderInto(S, [-3.6, 0, 0.3], 0.92, 1, false);
-  alderInto(S, [0, 0, -0.2], 1.06, 2, false);
-  alderInto(S, [3.8, 0, 0.25], 0.84, 3, false);
+  alderInto(S, [-3.9, 0, 0.3], 0.9, 1, 3, [1, 0, 0, 1]);
+  alderInto(S, [0, 0, -0.2], 1.04, 2, 3, [0, 1, 0, 1]);
+  alderInto(S, [4.1, 0, 0.25], 0.82, 3, 3, [0, 0, 1, 1]);
   return S;
 }
 

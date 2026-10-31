@@ -22,7 +22,7 @@ void main() {
   vec3 view = normalize(cameraPosition - p);
   vec3 side = normalize(cross(uDir, view));
   float len = aOff.w;
-  vec3 wp = p + side * position.x * 0.022 - uDir * position.y * len;
+  vec3 wp = p + side * position.x * 0.03 - uDir * position.y * len;
   float d = distance(wp, cameraPosition);
   vA = smoothstep(0.6, 2.0, d) * (1.0 - smoothstep(14.0, 26.0, d));
   vT = position.y;
@@ -35,7 +35,7 @@ uniform vec3 uCol;
 varying float vA;
 varying float vT;
 void main() {
-  gl_FragColor = vec4(uCol, 0.46 * uK * vA * (1.0 - vT * 0.7));
+  gl_FragColor = vec4(uCol, 0.55 * uK * vA * (1.0 - vT * 0.65));
 }`;
 
 export class WeatherFx {
@@ -46,7 +46,7 @@ export class WeatherFx {
     quad.setAttribute('position', new THREE.BufferAttribute(new Float32Array([-0.5, 0, 0, 0.5, 0, 0, 0.5, 1, 0, -0.5, 1, 0]), 3));
     quad.setIndex([0, 1, 2, 0, 2, 3]);
     const off = new Float32Array(RAIN * 4);
-    for (let i = 0; i < RAIN; i++) off.set([(r() - 0.5) * 48, r() * 32, (r() - 0.5) * 48, 0.45 + r() * 0.5], i * 4);
+    for (let i = 0; i < RAIN; i++) off.set([(r() - 0.5) * 48, r() * 32, (r() - 0.5) * 48, 0.5 + r() * 0.35], i * 4);
     quad.setAttribute('aOff', new THREE.InstancedBufferAttribute(off, 4));
     quad.instanceCount = RAIN;
     const slant = Math.tan((12 * Math.PI) / 180);
@@ -153,7 +153,7 @@ export class WeatherFx {
     ru.uT.value = t;
     ru.uCam.value.copy(cam);
     ru.uSpeed.value = id === 'burza' ? 19 : 14;
-    if (light) ru.uCol.value.copy(light.hemiSky).multiplyScalar(0.55 + light.hemiI * 0.4).lerp(new THREE.Color('#dfe6ec'), 0.35);
+    if (light) ru.uCol.value.set('#e4eaef').multiplyScalar(0.55 + Math.min(1, light.hemiI) * 0.45);
     this.snow.visible = this.k.snow > 0.02;
     this.snowMat.uniforms.uK.value = this.k.snow;
     this.snowMat.uniforms.uT.value = t;

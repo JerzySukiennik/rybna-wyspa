@@ -36,7 +36,7 @@ function hash(n) {
 
 export function dayPhase(tSec, seed = 0) {
   const p = (((tSec + seed * 97) % DAY_LEN + DAY_LEN) % DAY_LEN) / DAY_LEN;
-  return ALWAYS_DAY ? 0.35 - 0.17 * Math.cos(p * Math.PI * 2) : p;
+  return ALWAYS_DAY ? 0.35 - 0.1 * Math.cos(p * Math.PI * 2) : p;
 }
 
 export function isNight(phase) { return phase >= NIGHT_FROM; }

@@ -5,15 +5,17 @@ export function eelFin(ctx, o) {
   const { sp, prof, S } = ctx;
   const L = sp.L, path = [];
   const nT = o.nTop ?? 18, nB = o.nBot ?? 14;
+  const tail = (s) => (o.point ? 1 - 0.78 * smooth(0.72, 1, s) : 1);
+  const toEnd = (s, h0) => (o.point ? h0 * tail(s) : lerp(h0, o.hEnd, smooth(0.55, 1, s)));
   for (let i = 0; i <= nT; i++) {
     const s = i / nT, pr = prof(lerp(o.u0, L, s));
-    path.push({ p: [pr.x, pr.c + pr.ht, 0], h: smooth(0, 0.3, s) * lerp(o.hTop, o.hEnd, smooth(0.55, 1, s)), g: 0 });
+    path.push({ p: [pr.x, pr.c + pr.ht, 0], h: smooth(0, 0.3, s) * toEnd(s, o.hTop), g: 0 });
   }
   const pe = prof(L);
   path.push({ p: [pe.x, pe.c, 0], h: o.hEnd, g: 1 });
   for (let i = nB; i >= 0; i--) {
     const s = i / nB, pr = prof(lerp(o.u1, L, s));
-    path.push({ p: [pr.x, pr.c - pr.hb, 0], h: smooth(0, 0.3, s) * lerp(o.hBot, o.hEnd, smooth(0.55, 1, s)), g: 2 });
+    path.push({ p: [pr.x, pr.c - pr.hb, 0], h: smooth(0, 0.3, s) * toEnd(s, o.hBot), g: 2 });
   }
   const n = path.length, rows = [[], [], []];
   for (let i = 0; i < n; i++) {

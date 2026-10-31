@@ -270,6 +270,9 @@ export class Build {
       pos.z = snapAngle(pos.z, GRID);
     }
     if (!onSolid) pos.y = this.groundUnder(def, pos, quat);
+    const sell = g.structs.sell;
+    if (!aim && sell && hit.collider.parent() === sell.body && Math.hypot(pos.x - sell.pos.x, pos.z - sell.pos.z) < 4.6) pos.y = Math.max(pos.y, sell.pos.y + 0.12);
+    else if (!aim && n.y > 0.55 && g.isStructure(hit.collider)) pos.y = Math.max(pos.y, p.y);
     return { pos, quat, yaw, tilt, ok: this.valid(def, pos, quat), snapped: null, aim };
   }
 
@@ -285,7 +288,12 @@ export class Build {
     let bad = null;
     g.phys.world.intersectionsWithShape(c, quat, shape, (col) => {
       if (col.parent() === g.phys.island) return true;
-      if (g.isStructure(col)) { bad = 'Tu stoi budynek'; return false; }
+      if (g.isStructure(col)) {
+        const sell = g.structs.sell;
+        if (sell && col.parent() === sell.body && col.handle !== sell.booth) return true;
+        bad = 'Tu stoi budynek';
+        return false;
+      }
       const b = g.blocks.blockAtCollider(col);
       if (b && !b.def.ghost) { bad = `Zajęte przez: ${b.def.name}`; return false; }
       return true;

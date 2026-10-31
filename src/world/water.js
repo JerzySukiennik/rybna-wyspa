@@ -93,7 +93,7 @@ void main() {
   }
 
   vec3 body = mix(uShallow, uDeep, smoothstep(0.25, 3.2, depth));
-  body = mix(body, uSand, (1.0 - smoothstep(0.0, 0.7, depth)) * 0.55);
+  body = mix(body, uSand, (1.0 - smoothstep(0.0, 0.7, depth)) * 0.25);
   float band = vn(vec2((vW.x + uTime * uFlow * 1.6) * 0.022, vW.z * 0.21)) * vn(vec2((vW.x + uTime * uFlow) * 0.009, vW.z * 0.07 + 3.0));
   body *= 0.94 + band * 0.22;
   vec3 lit = body * (uHemi * 0.85 + uSunColor * max(uSunDir.y, 0.0) * 0.55);
@@ -129,9 +129,11 @@ void main() {
   float foamLine = 1.0 - smoothstep(0.05, 0.22 + 0.06 * sin(uTime * 0.9 + vW.x * 0.7 + vW.z * 0.5), min(dIsl, min(dBank, barDepth(vW.xz))));
   float foamN = smoothstep(0.35, 0.75, vn(vW.xz * 2.2 + uTime * 0.4));
   col = mix(col, uFoam * (uHemi * 0.9 + uSunColor * 0.35), foamLine * (0.35 + 0.4 * foamN));
-  col += uFoam * rip * 0.22 * (uHemi * 0.8 + 0.2);
+  col += uFoam * rip * 0.55 * (uHemi * 0.8 + 0.2);
 
-  gl_FragColor = vec4(col, 1.0);
+  float alpha = max(mix(0.42, 1.0, smoothstep(0.05, 1.5, depth)), clamp(fres * 1.3, 0.0, 1.0));
+  alpha = max(alpha, foamLine * 0.8);
+  gl_FragColor = vec4(col, alpha);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
   #include <fog_fragment>
@@ -155,7 +157,7 @@ export class Water {
     }]);
     this.uniforms.uHeight.value = heightTex;
     this.uniforms.uBars.value = bars;
-    this.mat = new THREE.ShaderMaterial({ uniforms: this.uniforms, vertexShader: VERT, fragmentShader: FRAG, fog: true });
+    this.mat = new THREE.ShaderMaterial({ uniforms: this.uniforms, vertexShader: VERT, fragmentShader: FRAG, fog: true, transparent: true });
     const near = new THREE.PlaneGeometry(240, 240, 80, 80);
     near.rotateX(-Math.PI / 2);
     this.near = new THREE.Mesh(near, this.mat);

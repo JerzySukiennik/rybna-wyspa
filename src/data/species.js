@@ -1,13 +1,13 @@
 // Rybna Wyspa: Narew fish species and rarity tiers (gameplay data; visuals live in src/models/fish.js).
 
 export const RARITIES = [
-  { id: 'common', name: 'Pospolita', color: '#b9c2cc' },
-  { id: 'uncommon', name: 'Niepospolita', color: '#5fd068' },
-  { id: 'rare', name: 'Rzadka', color: '#4aa8ff' },
-  { id: 'epic', name: 'Epicka', color: '#b57bff' },
-  { id: 'legendary', name: 'Legendarna', color: '#ffb02e' },
-  { id: 'mythic', name: 'Mityczna', color: '#ff5fd2' },
-  { id: 'secret', name: 'Sekretna', color: '#3ff2e4' },
+  { id: 'common', name: 'Pospolita', color: '#6b7785' },
+  { id: 'uncommon', name: 'Niepospolita', color: '#4f8a55' },
+  { id: 'rare', name: 'Rzadka', color: '#3a6ea8' },
+  { id: 'epic', name: 'Epicka', color: '#7c55a6' },
+  { id: 'legendary', name: 'Legendarna', color: '#b8841c' },
+  { id: 'mythic', name: 'Mityczna', color: '#ad3f76' },
+  { id: 'secret', name: 'Sekretna', color: '#24857c' },
 ];
 
 const S = (id, name, latin, rarity, len, kg, price, b = {}) => ({

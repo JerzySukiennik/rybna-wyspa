@@ -14,18 +14,18 @@ export const FISH_IDS = [
 
 const BASE = {
   L: 0.81, H: 0.25, up: 0.52, W: 0.1, pkT: 0.4, pkB: 0.44, pkW: 0.3, nT: 0.72, nB: 0.8, nW: 0.55,
-  tT: 1, tB: 1, tW: 1, ped: 0.3, pedB: null, pedW: 0.34, my: 0, mt: 0.3, cT: 0, eU: 2, eL: 2, N: 10, S: 13,
+  tT: 1, tB: 1, tW: 1, ped: 0.3, pedB: null, pedW: 0.34, my: 0, mt: 0.3, cT: 0, eU: 2, eL: 2, N: 9, S: 13, jv: 0.035, sg: 1, sj: 0.3, diag: 0, serr: 0.1,
   grad: [-0.65, -0.25, 0.3, 0.75], jit: 0.08, pat: [], sat: 0.88,
   col: { back: '#4d6470', flank: '#cfd6da', belly: '#f0f1ee' },
   eye: { u: 0.072, yn: 0.25, r: 0.025, iris: '#f1efe6', pupil: '#0b0c0f', glow: 0 },
   mouth: { t: 'term', u: 0.032, y0: 0, y1: -0.15, w: 0.0034, h: 0.0028, col: '#2a2420' },
-  gill: { u: 0.19, k: 0.022, y0: 0.6, y1: -0.7 },
+  gill: { u: 0.19, k: 0.022, y0: 0.62, y1: -0.72, kseg: 2 },
   fins: {
     D: [0.4, 0.52, 0.11, 'tri', 0.45],
     A: [0.63, 0.73, 0.075, 'tri', 0.45],
     P: { u: 0.205, yn: -0.5, len: 0.105, shape: 'point' },
-    V: { u: 0.43, yn: -0.82, len: 0.085, shape: 'point' },
-    C: { t: 'fork', S: 0.12, F: 0.42 },
+    V: { u: 0.43, yn: -0.82, len: 0.085, shape: 'point', rows: 1 },
+    C: { t: 'fork', S: 0.12, F: 0.42, m: 7 },
   },
   fc: {}, fp: {},
 };
@@ -72,6 +72,12 @@ function makeProf(sp) {
         c: sp.my * sp.H * (1 - smooth(0, sp.mt, t)) + sp.cT * smooth(0.5, 1, t),
       };
     }
+    if (sp.bumps && t > 0) {
+      for (const [uc, uw, dT, dB, dW = 0] of sp.bumps) {
+        const g = Math.exp(-(((u - uc) / uw) ** 2)) * smooth(0, 0.02, u);
+        r.ht += dT * g; r.hb += dB * g; r.w += dW * g;
+      }
+    }
     return { u, t, x: 0.5 - u, c: r.c, ht: Math.max(r.ht, 1e-5), hb: Math.max(r.hb, 1e-5), w: Math.max(r.w, 1e-5), eU: ex(sp.eU, t), eL: ex(sp.eL, t) };
   };
 }
@@ -101,14 +107,19 @@ function patCuts(sp) {
 
 function stations(sp) {
   if (sp.stations) return sp.stations.slice();
-  const L = sp.L, n = sp.S - 3;
-  const base = [0, 0.012, 0.034];
-  const a = 0.068;
-  for (let i = 0; i < n; i++) base.push(lerp(a, L, i / (n - 1)));
+  const head = sp.headSt || [0.012, 0.034];
+  const L = sp.L, n = sp.S - 1 - head.length;
+  const base = [0, ...head];
+  const a = head[head.length - 1] * 2;
+  for (let i = 0; i < n; i++) {
+    let f = Math.pow(i / (n - 1), sp.sg);
+    if (i > 0 && i < n - 1) f += ((hh(i, 7, sp.seed) - 0.5) * sp.sj) / (n - 1);
+    base.push(lerp(a, L, clamp(f, 0, 1)));
+  }
   const cuts = patCuts(sp);
   if (!cuts.length) return base;
   const gap = (L - a) / (n - 1);
-  const keep = base.filter((u, i) => i < 3 || u >= L - 1e-6 || !cuts.some((c) => Math.abs(c - u) < gap * 0.42));
+  const keep = base.filter((u, i) => i <= head.length || u >= L - 1e-6 || !cuts.some((c) => Math.abs(c - u) < gap * 0.42));
   return [...new Set([...keep, ...cuts])].sort((x, y) => x - y);
 }
 
@@ -210,7 +221,7 @@ function finCol(sp, key, s, rf, j, r) {
   const c1 = typeof pair[1] === 'string' ? H(pair[1]) : pair[1];
   let c = mixC(c0, c1, rf);
   const fp = sp.fp[key] || {};
-  if ((fp.rays ?? 0.05) && (j & 1)) c.multiplyScalar(1 - (fp.rays ?? 0.05));
+  if ((fp.rays ?? 0.1) && (j & 1)) c.multiplyScalar(1 - (fp.rays ?? 0.1));
   if (fp.dots && rf > 0.25 && hh(j * 7 + 3, r * 13 + 5, sp.seed * 31 + key.charCodeAt(0)) < fp.dots[1]) c = mixC(c, H(fp.dots[0]), fp.dots[2] ?? 0.75);
   if (fp.spot && s >= fp.spot[1] && rf >= fp.spot[2]) c = H(fp.spot[0]).clone();
   if (fp.edge && rf >= fp.edge[1]) c = mixC(c, H(fp.edge[0]), fp.edge[2] ?? 1);
@@ -233,7 +244,8 @@ function medianFin(ctx, key, spec) {
     const s = j / n, u = lerp(u0, u1, s), pr = prof(u);
     const yb = top ? pr.c + pr.ht : pr.c - pr.hb;
     const inset = Math.min(0.012, 0.4 * (top ? pr.ht : pr.hb));
-    const hf = h * finShape(shape, s, j, n, o);
+    const ser = ['spiny', 'ruffe', 'crest', 'flame'].includes(shape) || n < 4 ? 0 : (o.serr ?? sp.serr);
+    const hf = h * finShape(shape, s, j, n, o) * (j % 2 && j < n ? 1 - ser : 1);
     const rk = rake * hf + (o.rakeJ ? o.rakeJ(s, j) : 0);
     const B = [pr.x, yb - sg * inset, 0];
     const T = [pr.x - rk, yb + sg * hf, 0];
@@ -276,6 +288,7 @@ function caudalOutline(Cs, Lc, m) {
       X = lerp(tip[0], notch[0], w) - (Cs.bow ?? 0) * Lc * Math.sin(Math.PI * w);
       Y = lerp(tip[1], notch[1], w);
       if (Cs.rt && (j === 0 || j === m)) X -= Cs.rt * 0.12 * Lc;
+      if (j % 2 && j !== m / 2 && j < m) X -= (Cs.serr ?? 0.05) * Lc;
       if (Cs.rt && (j === 1 || j === m - 1)) Y += (j === 1 ? 1 : -1) * Cs.rt * 0.08 * S;
     }
     O.push([X, Y]);
@@ -361,15 +374,17 @@ function pairedFin(ctx, key) {
 function eyes(ctx) {
   const E = ctx.sp.eye;
   if (!E) return;
-  const pr = ctx.prof(E.u);
-  const r = Math.min(E.r * (E.k ?? 1.75), (E.fit ?? 0.34) * (pr.ht + pr.hb));
-  ctx.eyeR = r;
+  const pr0 = ctx.prof(E.u);
+  const r = Math.min(E.r * (E.k ?? 1.75) * 1.5, (E.fit ?? 0.42) * (pr0.ht + pr0.hb));
+  const eu = Math.max(E.u, r + 0.016);
+  ctx.eyeR = r; ctx.eyeU = eu;
+  const rim = E.rim ? H(E.rim) : shade(ctx.paintAt(eu, E.yn, 1), 0.45);
   for (const side of [1, -1]) {
-    const at = ctx.surfAt(E.u, E.yn, side);
+    const at = ctx.surfAt(eu, E.yn, side);
     const n = norm(add(at.n, [0, 0, side * (E.out ?? 0.25)]));
     dome(ctx.S, ctx.caster, at.p, n, r, {
-      rings: [[1, -0.08], [E.pf ?? 0.5, 0.2]], apex: 0.3, seg: 8, kind: 3,
-      cols: [H(E.iris), H(E.pupil)], glows: [E.glow || 0, E.pglow ?? (E.glow || 0)],
+      rings: [[1, -0.08], [0.84, 0.1], [E.pf ?? 0.5, 0.21]], apex: 0.3, seg: 7, kind: 3,
+      cols: [rim, H(E.iris), H(E.pupil)], glows: [0, E.glow || 0, E.pglow ?? (E.glow || 0)],
     });
     if (E.spark !== false) {
       const [t1, t2] = basis(n);
@@ -419,13 +434,14 @@ function gill(ctx) {
   if (!G) return;
   for (const side of [1, -1]) {
     const K = G.kseg || 3, pts = [], nr = [];
+    const gu = Math.max(G.u, (ctx.eyeU ?? 0) + (ctx.eyeR ?? 0) + 0.022);
     for (let i = 0; i <= K; i++) {
       const s = i / K;
-      const at = ctx.surfAt(G.u + G.k * Math.sin(Math.PI * s), lerp(G.y0, G.y1, s), side);
+      const at = ctx.surfAt(gu + G.k * Math.sin(Math.PI * s), lerp(G.y0, G.y1, s), side);
       pts.push(at.p); nr.push(at.n);
     }
-    const c = G.col ? H(G.col).clone() : shade(ctx.paintAt(G.u, 0.05, side), G.dark ?? 0.78);
-    ridge(ctx.S, pts, nr, G.w ?? 0.0032, G.h ?? 0.0021, c, 0, 2);
+    const c = G.col ? H(G.col).clone() : shade(ctx.paintAt(G.u, 0.05, side), G.dark ?? 0.62);
+    ridge(ctx.S, pts, nr, G.w ?? 0.0042, G.h ?? 0.0032, c, 0, 2);
   }
 }
 
@@ -451,6 +467,26 @@ function barbels(ctx) {
       tube(ctx.S, pts, radii, 3, H(B.col || '#8a7a5a'), B.glow || 0, 4);
     }
   }
+}
+
+function jawPart(ctx) {
+  const J = ctx.sp.jaw;
+  if (!J) return;
+  const p0 = ctx.surfRad(J.u, Math.PI);
+  const a = madd(p0.p, p0.n, -J.r * 0.7);
+  const tip = [0.5 + (J.dx ?? 0.006), ctx.prof(0).c + (J.dy ?? 0), 0];
+  const mid = [lerp(a[0], tip[0], 0.55), lerp(a[1], tip[1], 0.55) - (J.sag ?? 0.004), 0];
+  const base = H(J.col ?? ctx.sp.col.belly);
+  tube(ctx.S, [a, mid, tip], [J.r, J.r * 0.78, J.r * 0.3], 5, (i) => base.clone().multiplyScalar(1 - i * 0.07), 0, 4, { capEnd: true });
+}
+
+function lipsPart(ctx) {
+  const Lp = ctx.sp.lips;
+  if (!Lp) return;
+  const at = ctx.surfRad(Lp.u, Math.PI * (Lp.ang ?? 1));
+  const p0 = madd(at.p, at.n, -Lp.r * 0.6);
+  const d = norm([Lp.dx ?? 0.6, Lp.dy ?? -0.6, 0]);
+  tube(ctx.S, [p0, madd(p0, d, Lp.len * 0.6), madd(p0, d, Lp.len)], [Lp.r, Lp.r * 1.08, Lp.r * 0.92], 6, H(Lp.col ?? '#c9a48a'), 0, 4, { capEnd: true, capCol: H('#2a1c18') });
 }
 
 function spotsRaised(ctx) {
@@ -520,7 +556,12 @@ function buildBody(ctx) {
   for (let i = 1; i < us.length; i++) {
     const pr = prof(us[i]);
     const pts = [];
-    for (let k = 0; k < N; k++) pts.push(ringPt(pr, (k / N) * Math.PI * 2 + (sp.ringRot || 0)));
+    for (let k = 0; k < N; k++) {
+      const p = ringPt(pr, (k / N) * Math.PI * 2 + (sp.ringRot || 0));
+      const edge = k === 0 || (N % 2 === 0 && k === N / 2);
+      const j = 1 + (hh(i * 31 + k, 5, sp.seed) - 0.5) * 2 * sp.jv * (edge ? 0.35 : 1) * smooth(0.01, 0.06, us[i]);
+      pts.push([p[0], pr.c + (p[1] - pr.c) * j, p[2] * j]);
+    }
     rings.push({ pr, pts });
   }
   ctx.rings = rings;
@@ -558,7 +599,7 @@ function buildBody(ctx) {
         face(b, c, M, sub(centroid3(b, c, M), ax), { i, k, part: 'side', mul: 0.97 });
         face(c, d, M, sub(centroid3(c, d, M), ax), { i, k, part: 'rear', net: [sc.net, sc.a ?? 0.5] });
         face(d, a, M, sub(centroid3(d, a, M), ax), { i, k, part: 'side', mul: 0.97 });
-      } else if ((i + k) & 1) {
+      } else if (sp.diag === 1 ? (k & 1) : sp.diag === 2 ? (i & 1) : (i + k) & 1) {
         face(a, b, c, want, { i, k, half: 0 });
         face(a, c, d, want, { i, k, half: 1 });
       } else {
@@ -632,6 +673,8 @@ function buildOnce(sp) {
     pairedFin(ctx, 'V');
     eyes(ctx);
     mouth(ctx);
+    jawPart(ctx);
+    lipsPart(ctx);
     gill(ctx);
     barbels(ctx);
     spotsRaised(ctx);

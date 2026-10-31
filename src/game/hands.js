@@ -165,12 +165,11 @@ export class Hands {
     let y = -0.22 + bob;
     let i = 0;
     const now = new Set();
-    for (const f of stack) {
-      const r = g.fishView.recs.get(f.id);
-      if (!r) continue;
-      now.add(f.id);
+    const order = stack.map((f) => g.fishView.recs.get(f.id)).filter(Boolean).sort((a, b) => b.L * b.fat - a.L * a.fat);
+    for (const r of order) {
+      now.add(r.id);
       r.held = true;
-      if (!show || i >= 14) { r.visible = false; r.p.set(0, -60, 0); g.fishView.place(r); i++; continue; }
+      if (!show || i >= 5) { r.visible = false; r.p.set(0, -60, 0); g.fishView.place(r); i++; continue; }
       r.visible = true;
       const th = Math.max(0.022, r.L * 0.6 * r.dims.w * r.fat * 1.3 + 0.006);
       const lean = Math.sin(this.wob * 0.5 + i * 0.7) * 0.012 * Math.min(1, i / 4);
