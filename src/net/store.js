@@ -107,20 +107,21 @@ export class LocalStore extends Emitter {
     return true;
   }
 
-  async remove(bid) {
+  async remove(bid, quiet = false) {
     const rec = this.s.blocks[bid];
     if (!rec) return false;
     delete this.s.blocks[bid];
     this.s.wh[rec.t] = (this.s.wh[rec.t] || 0) + 1;
-    const tid = 't' + Date.now().toString(36) + Math.floor(Math.random() * 1e4);
-    this.s.trash[tid] = { b: rec, by: this.me.uid, bn: this.me.nick, at: Date.now() };
     this.emit('wh', this.s.wh);
     this.emit('block', bid, null);
+    this.touch();
+    if (quiet) return true;
+    const tid = 't' + Date.now().toString(36) + Math.floor(Math.random() * 1e4);
+    this.s.trash[tid] = { b: rec, by: this.me.uid, bn: this.me.nick, at: Date.now() };
     this.emit('trash', this.s.trash);
     this.log('remove', BLOCK_BY_ID[rec.t].name);
     this.stat(this.me.uid, this.me.nick, 'removed', 1);
-    this.touch();
-    return true;
+    return tid;
   }
 
   async restore(tid) {

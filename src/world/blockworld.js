@@ -24,6 +24,7 @@ export class BlockWorld {
     this.byBody = new Map();
     this.mat = blockMaterial();
     this.dirtyBounds = new Set();
+    this.popping = new Set();
     this.onAdd = null;
     this.onRemove = null;
   }
@@ -43,6 +44,8 @@ export class BlockWorld {
     if (!rec) return this.remove(id);
     const def = BLOCK_BY_ID[rec.t];
     if (!def) return;
+    const prev = this.blocks.get(id);
+    if (prev && prev.rec.t === rec.t && prev.rec.x === rec.x && prev.rec.y === rec.y && prev.rec.z === rec.z && (prev.rec.ry || 0) === (rec.ry || 0) && (prev.rec.rp || 0) === (rec.rp || 0)) { prev.rec = rec; return prev; }
     if (this.blocks.has(id)) this.remove(id, true);
     const { pos, quat } = blockTransform(rec);
     const mat = new THREE.Matrix4().compose(pos, quat, new THREE.Vector3(1, 1, 1));
@@ -105,7 +108,24 @@ export class BlockWorld {
     return id ? this.blocks.get(id) : null;
   }
 
-  frame() {
+  pop(id) {
+    const b = this.blocks.get(id);
+    if (b) { b.popT = 0; this.popping.add(b); }
+  }
+
+  frame(dt = 0) {
+    for (const b of this.popping) {
+      const v = this.views.get(b.rec.t);
+      if (!this.blocks.has(b.id) || !v) { this.popping.delete(b); continue; }
+      b.popT += dt;
+      const t = Math.min(1, b.popT / 0.34);
+      const s = t >= 1 ? 1 : 1 - 0.22 * (1 - t) * (1 - t) * Math.cos(t * 9);
+      const m = t >= 1 ? b.mat : new THREE.Matrix4().compose(b.pos, b.quat, new THREE.Vector3(s, s, s));
+      v.body.set(b.id, m);
+      if (v.strip) v.strip.set(b.id, m);
+      if (v.water) v.water.set(b.id, m);
+      if (t >= 1) this.popping.delete(b);
+    }
     for (const t of this.dirtyBounds) {
       const v = this.views.get(t);
       if (!v) continue;

@@ -152,9 +152,11 @@ export class Hud {
     }
   }
 
-  buildHint(def, snap) {
-    if (!def) { this.el.hint.innerHTML = ''; return; }
-    this.el.hint.innerHTML = `${esc(def.name)} &nbsp; <kbd>LPM</kbd>postaw <kbd>PPM</kbd>zdejmij <kbd>R</kbd><kbd>T</kbd>obrót <kbd>Z</kbd><kbd>X</kbd>pochyl <kbd>Shift</kbd>${snap ? 'przyciąganie: tak' : 'przyciąganie'}`;
+  buildHint(def, free) {
+    if (!def) { if (this.lastHint) { this.el.hint.innerHTML = ''; this.lastHint = ''; } return; }
+    const undo = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘Z' : 'Ctrl+Z';
+    const html = `${esc(def.name)} &nbsp; <kbd>LPM</kbd>postaw <kbd>PPM</kbd>zdejmij <kbd>R</kbd>obróć <kbd>Alt</kbd>${free ? 'swobodnie: tak' : 'swobodnie'} <kbd>${undo}</kbd>cofnij`;
+    if (html !== this.lastHint) { this.el.hint.innerHTML = html; this.lastHint = html; }
   }
 
   stack(stack, cap, mult) {

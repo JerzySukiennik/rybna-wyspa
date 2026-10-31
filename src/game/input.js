@@ -20,7 +20,8 @@ export class Input {
     addEventListener('keydown', (e) => {
       if (e.code === 'Tab') e.preventDefault();
       if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
-      if (!e.repeat && this.onKey && this.onKey(e.code)) return;
+      if (e.code === 'AltLeft' || e.code === 'AltRight') e.preventDefault();
+      if (!e.repeat && this.onKey && this.onKey(e.code, e)) { e.preventDefault(); return; }
       if (!e.repeat) this.pressed.push(e.code);
       if (this.locked) this.keys.add(e.code);
     });

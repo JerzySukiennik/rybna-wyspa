@@ -145,29 +145,33 @@ export class RemoteStore extends Emitter {
 
   async place(rec) {
     const fb = this.fb;
-    const res = await fb.runTransaction(this.r(`wh/${rec.t}`), (cur) => ((cur || 0) > 0 ? cur - 1 : undefined));
-    if (!res.committed) return false;
+    if ((this.s.wh[rec.t] || 0) <= 0) return false;
     rec.by = this.me.uid;
     rec.bn = this.me.nick;
     rec.at = Date.now();
+    this.s.blocks[rec.id] = rec;
+    this.emit('block', rec.id, rec);
+    const res = await fb.runTransaction(this.r(`wh/${rec.t}`), (cur) => ((cur || 0) > 0 ? cur - 1 : undefined));
+    if (!res.committed) { delete this.s.blocks[rec.id]; this.emit('block', rec.id, null); return false; }
     await fb.set(this.r(`blocks/${rec.id}`), rec);
     this.stat(this.me.uid, this.me.nick, 'built', 1);
     return true;
   }
 
-  async remove(bid) {
+  async remove(bid, quiet = false) {
     const fb = this.fb;
+    if (this.s.blocks[bid]) { delete this.s.blocks[bid]; this.emit('block', bid, null); }
     let taken = null;
     const res = await fb.runTransaction(this.r(`blocks/${bid}`), (cur) => { taken = cur; return cur ? null : undefined; });
     if (!res.committed || !taken) return false;
     const tid = 't' + Date.now().toString(36) + Math.floor(Math.random() * 1e4);
-    await fb.update(this.r(''), {
-      [`wh/${taken.t}`]: fb.increment(1),
-      [`trash/${tid}`]: { b: taken, by: this.me.uid, bn: this.me.nick, at: Date.now() },
-    });
+    const upd = { [`wh/${taken.t}`]: fb.increment(1) };
+    if (!quiet) upd[`trash/${tid}`] = { b: taken, by: this.me.uid, bn: this.me.nick, at: Date.now() };
+    await fb.update(this.r(''), upd);
+    if (quiet) return true;
     this.log('remove', BLOCK_BY_ID[taken.t] ? BLOCK_BY_ID[taken.t].name : taken.t);
     this.stat(this.me.uid, this.me.nick, 'removed', 1);
-    return true;
+    return tid;
   }
 
   async restore(tid) {

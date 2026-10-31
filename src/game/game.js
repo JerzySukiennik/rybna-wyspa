@@ -143,7 +143,7 @@ export class Game {
 
     this.input = new Input(this.canvas);
     this.input.onLockChange = (on) => this.onLock(on);
-    this.input.onKey = (code) => this.uiKey(code);
+    this.input.onKey = (code, e) => this.uiKey(code, e);
     this.input.canLock = () => this.playing && !this.paused && !this.panels.open && !this.panels.shopOpen;
     this.input.onLockError = () => this.lockFailed();
     this.hud = new Hud();
@@ -592,8 +592,12 @@ export class Game {
     if (this.playing && !this.input.locked && !this.paused && !this.panels.open && !this.panels.shopOpen && !this.settings.nolock) this.pause(true);
   }
 
-  uiKey(code) {
+  uiKey(code, e) {
     if (!this.playing || !this.store || this.paused) return false;
+    if (code === 'KeyZ' && e && (e.ctrlKey || e.metaKey)) {
+      if (!this.panels.open && !this.panels.shopOpen) this.build.undoLast();
+      return true;
+    }
     if (code === 'Tab') {
       if (this.panels.shopOpen) this.panels.toggleShop(false);
       const on = !this.panels.open;
@@ -691,7 +695,7 @@ export class Game {
     this.fishView.frame();
     this.fx.traitFx(this.fishView.recs.values(), camPos, dt);
     this.fx.tick(dt, innerHeight);
-    this.blocks.frame();
+    this.blocks.frame(dt);
     this.hud.frame(dt);
     this.audioTick(dt);
     if (this.store) this.store.tick(dt);
@@ -808,7 +812,7 @@ export class Game {
     if (!hasPump) t = 'Wybierz <kbd>2</kbd> ręczną pompę i postaw ją <kbd>LPM</kbd> niedaleko startu.';
     else if (sold === 0 && this.myStack().length === 0) t = 'Wróć do rąk <kbd>1</kbd> i klikaj pompę <kbd>LPM</kbd>. Ryby wyskoczą na trawę, zbieraj je <kbd>LPM</kbd>.';
     else if (sold === 0) t = 'Zanieś stos do <b>SKUPU</b> (drogowskaz) i wysyp go do leja <kbd>Q</kbd>.';
-    else if (belts < 3) t = 'Taśma niesie ryby sama. Wybierz <kbd>3</kbd> i ułóż linię od pompy do skupu. <kbd>Shift</kbd> łączy końce.';
+    else if (belts < 3) t = 'Taśma niesie ryby sama. Wybierz <kbd>3</kbd> i ułóż linię od pompy do skupu. Końce taśm same się łączą, <kbd>R</kbd> obraca.';
     else if ((s.earned || 0) < 400) t = 'Kupuj więcej w <b>SKLEPIE</b> <kbd>E</kbd>. Sieć rybacka łowi sama, a rynny z wodą nie psują ryb.';
     else if (!this.tipDone) { this.tipDone = true; this.hud.toast('Samouczek zaliczony. Tab otwiera rejestr farmy: zadania, album, ranking.', 'gold'); }
     const el = document.getElementById('tip');
