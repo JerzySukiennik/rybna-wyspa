@@ -13,17 +13,17 @@ const W = (a) => a;
 const B = (id, name, cat, cost, lvl, kind, dim, o = {}) => ({ id, name, cat, cost, lvl, kind, dim, ...o });
 
 export const BLOCKS = [
-  B('pompa', 'Ręczna pompa', 'spawn', 50, 1, 'spawner', [1.1, 1.9, 1.1], { manual: true, cd: 0.32, w: W([86, 13, 1, 0, 0, 0]), desc: 'Klikasz, ryba wyskakuje.' }),
-  B('siec', 'Sieć rybacka', 'spawn', 420, 1, 'spawner', [1.2, 1.9, 1.2], { every: 7, w: W([72, 24, 4, 0, 0, 0]), desc: 'Sama łowi co 7 s.' }),
-  B('wiecierz', 'Więcierz', 'spawn', 2600, 2, 'spawner', [1.2, 1.9, 1.2], { every: 6, w: W([52, 34, 12, 2, 0, 0]) }),
-  B('klatka', 'Klatka hodowlana', 'spawn', 14000, 3, 'spawner', [1.3, 2, 1.3], { every: 5.5, w: W([34, 38, 22, 5.5, 0.5, 0]) }),
-  B('wylegarnia', 'Wylęgarnia', 'spawn', 80000, 4, 'spawner', [1.3, 2.1, 1.3], { every: 5, w: W([18, 34, 33, 13, 2, 0]) }),
-  B('glebinowa', 'Pompa głębinowa', 'spawn', 450000, 5, 'spawner', [1.3, 2.2, 1.3], { every: 4.5, w: W([6, 22, 38, 26, 7.5, 0.5]) }),
-  B('sonar', 'Sonar', 'spawn', 2.6e6, 6, 'spawner', [1.3, 2.2, 1.3], { every: 4, w: W([0, 10, 32, 38, 17, 3]), secret: 1 / 60000 }),
-  B('tama', 'Mała tama', 'spawn', 1.6e7, 8, 'spawner', [1.4, 2.3, 1.4], { every: 3.5, w: W([0, 0, 22, 42, 28, 8]), secret: 1 / 30000 }),
-  B('wir', 'Wir Narwi', 'spawn', 1.1e8, 10, 'spawner', [1.4, 2.3, 1.4], { every: 3, w: W([0, 0, 8, 38, 38, 16]), secret: 1 / 15000 }),
-  B('zrodlo', 'Mityczne źródło', 'spawn', 9e8, 12, 'spawner', [1.4, 2.4, 1.4], { every: 2.6, w: W([0, 0, 0, 28, 46, 26]), secret: 1 / 8000 }),
-  B('portal', 'Portal Gzowo', 'spawn', 8e9, 15, 'spawner', [1.5, 2.5, 1.5], { every: 2.2, w: W([0, 0, 0, 14, 48, 38]), secret: 1 / 3500 }),
+  B('pompa', 'Ręczna pompa', 'spawn', 50, 1, 'spawner', [1.1, 1.9, 1.1], { manual: true, cd: 0.85, w: W([86, 13, 1, 0, 0, 0]), desc: 'Klikasz, ryba wyskakuje.' }),
+  B('siec', 'Sieć rybacka', 'spawn', 300, 1, 'spawner', [1.2, 1.9, 1.2], { every: 4.5, w: W([72, 24, 4, 0, 0, 0]), desc: 'Sama łowi co 4,5 s.' }),
+  B('wiecierz', 'Więcierz', 'spawn', 2600, 2, 'spawner', [1.2, 1.9, 1.2], { every: 3.8, w: W([52, 34, 12, 2, 0, 0]) }),
+  B('klatka', 'Klatka hodowlana', 'spawn', 14000, 3, 'spawner', [1.3, 2, 1.3], { every: 3.4, w: W([34, 38, 22, 5.5, 0.5, 0]) }),
+  B('wylegarnia', 'Wylęgarnia', 'spawn', 80000, 4, 'spawner', [1.3, 2.1, 1.3], { every: 3.1, w: W([18, 34, 33, 13, 2, 0]) }),
+  B('glebinowa', 'Pompa głębinowa', 'spawn', 450000, 5, 'spawner', [1.3, 2.2, 1.3], { every: 2.9, w: W([6, 22, 38, 26, 7.5, 0.5]) }),
+  B('sonar', 'Sonar', 'spawn', 2.6e6, 6, 'spawner', [1.3, 2.2, 1.3], { every: 2.7, w: W([0, 10, 32, 38, 17, 3]), secret: 1 / 60000 }),
+  B('tama', 'Mała tama', 'spawn', 1.6e7, 8, 'spawner', [1.4, 2.3, 1.4], { every: 2.5, w: W([0, 0, 22, 42, 28, 8]), secret: 1 / 30000 }),
+  B('wir', 'Wir Narwi', 'spawn', 1.1e8, 10, 'spawner', [1.4, 2.3, 1.4], { every: 2.3, w: W([0, 0, 8, 38, 38, 16]), secret: 1 / 15000 }),
+  B('zrodlo', 'Mityczne źródło', 'spawn', 9e8, 12, 'spawner', [1.4, 2.4, 1.4], { every: 2.1, w: W([0, 0, 0, 28, 46, 26]), secret: 1 / 8000 }),
+  B('portal', 'Portal Gzowo', 'spawn', 8e9, 15, 'spawner', [1.5, 2.5, 1.5], { every: 1.9, w: W([0, 0, 0, 14, 48, 38]), secret: 1 / 3500 }),
 
   B('tasma_k', 'Krótka taśma', 'move', 5, 1, 'belt', [1, 0.42, 1], { len: 1, speed: 1.7 }),
   B('tasma', 'Taśma', 'move', 8, 1, 'belt', [1, 0.42, 2], { len: 2, speed: 1.7, desc: 'Tania, ale ryby na niej schną.' }),

@@ -60,6 +60,7 @@ export class FishSim {
     if (rot) bd.setRotation(rot);
     const body = this.phys.world.createRigidBody(bd);
     const cd = R.ColliderDesc.roundCuboid(Math.max(0.005, hx - r), Math.max(0.005, hy - r), Math.max(0.005, hz - r), r)
+      .setTranslation(0, (d.cy || 0) * L * fat, 0)
       .setMass(mass).setFriction(frozen ? 0.03 : 0.6 * (1 - slip) + 0.04).setRestitution(S.bounce)
       .setCollisionGroups(groups(G.FISH, G.WORLD | G.FISH | G.PLAYER | G.SENSOR));
     const col = this.phys.world.createCollider(cd, body);
