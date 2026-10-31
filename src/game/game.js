@@ -142,7 +142,7 @@ export class Game {
     this.player.teleport(SPOTS.spawn.x, SPOTS.spawn.y + 0.1, SPOTS.spawn.z);
     this.player.on.step = () => this.audio.play(this.surface() + '', { vol: 0.35, gap: 0.12 });
     this.player.on.land = (k) => { this.audio.play('land', { vol: 0.4 + k * 0.5 }); this.shake.y -= k * 0.04; };
-    this.player.on.jump = () => this.audio.play('jump', { vol: 0.4 });
+    this.player.on.jump = (dbl) => { if (dbl) this.audio.play('throw', { vol: 0.35 }); };
     this.hands = new Hands(this);
     this.build = new Build(this);
     progress(0.75, 'Ikony…');
