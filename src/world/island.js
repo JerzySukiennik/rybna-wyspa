@@ -7,7 +7,7 @@ import { terrainMaterial } from '../render/materials.js';
 export const LAND = 1.6;
 export const ISLAND_R = 25;
 export const SPAN = 100;
-const CELL = 1;
+const CELL = 0.75;
 
 export const SPOTS = {
   spawn: new THREE.Vector3(0, LAND, 11),
@@ -63,7 +63,16 @@ export function pathDist(x, z) {
       if (d < best) best = d;
     }
   }
-  return best + (noise2(x * 0.4, z * 0.4, 77) - 0.5) * 0.7;
+  return best + (noise2(x * 0.35, z * 0.35, 77) - 0.5) * 0.16;
+}
+
+const FLAT = [[5, -3, 7.5], [-9.5, 11.5, 5.5], [12.6, 2.6, 5.5], [0, 11, 4.5], [2, -21, 4]];
+
+function relief(x, z, s) {
+  let k = smooth(5, 9, s);
+  for (const [fx, fz, r] of FLAT) k *= smooth(r, r + 4, Math.hypot(x - fx, z - fz));
+  if (k <= 0) return 0;
+  return (fbm(x / 15 + 3.1, z / 15 - 1.7, 3, 41) - 0.5) * 0.9 * k;
 }
 
 export function islandHeight(x, z) {
@@ -76,8 +85,8 @@ export function islandHeight(x, z) {
     const d2 = ((x - hx) ** 2 + (z - hz) ** 2) / (hr * hr);
     if (d2 < 4) h += hh * Math.exp(-d2 * 1.6) * smooth(1, 4, s);
   }
-  if (s > 5) h += (noise2(x * 0.12, z * 0.12, 9) - 0.5) * 0.08;
-  if (s > 3.5) h -= 0.08 * (1 - smooth(0.35, 0.85, pathDist(x, z))) * smooth(3.5, 5, s);
+  if (s > 5) h += relief(x, z, s);
+  if (s > 3.5) h -= 0.08 * (1 - smooth(0.55, 1.05, pathDist(x, z))) * smooth(3.5, 5, s);
   return h;
 }
 
@@ -87,14 +96,15 @@ export function isBuildable(x, z) {
 
 const C = (h) => new THREE.Color(h);
 const PAL = {
-  grass: C('#76925a'),
-  grass2: C('#647f4c'),
-  grassHi: C('#86a062'),
-  meadow: C('#8a9660'),
+  grass: C('#7fa046'),
+  grass2: C('#6e9440'),
+  grassHi: C('#8ea852'),
+  meadow: C('#8a9a55'),
   dry: C('#9a9a62'),
-  trod: C('#7c7a4a'),
-  path: C('#a48a62'),
-  path2: C('#957c56'),
+  trod: C('#8a8a52'),
+  path: C('#a88a5e'),
+  path2: C('#9c7f56'),
+  bank: C('#6b6a48'),
   earth: C('#8b7152'),
   earth2: C('#76603f'),
   ledge: C('#6f8442'),
@@ -104,8 +114,6 @@ const PAL = {
   wetMud: C('#594d3b'),
   under: C('#4c4f37'),
 };
-
-const TONES = [C('#5c7a3c'), C('#6c8a44'), C('#7d974e'), C('#8e9c58')];
 
 const nrm = new THREE.Vector3();
 const e1 = new THREE.Vector3();
@@ -122,25 +130,21 @@ function faceColor(ax, ay, az, bx, by, bz, cx, cy, cz, out) {
 function colorAt(mx, my, mz, slope, out) {
   const s = coastDist(mx, mz);
   const b = beachiness(mx, mz);
-  const grain = (hash2(Math.floor(mx * 3), Math.floor(mz * 3), 5) - 0.5) * 0.035;
   if (my < -0.15) return out.copy(PAL.under).lerp(PAL.wetMud, clamp(1 + my / 1.2, 0, 1));
-  if (b > 0.5 && s < 7 && my < LAND - 0.2) {
-    out.copy(my < 0.22 ? PAL.wetSand : PAL.sand).lerp(PAL.wetSand, smooth(0.6, 0.15, my) * 0.6);
-    return out.offsetHSL(0, 0, grain);
+  if (b > 0.5 && s < 7 && my < LAND - 0.2) return out.copy(PAL.sand).lerp(PAL.wetSand, smooth(0.6, 0.12, my));
+  if (my < 0.5) return out.copy(PAL.wetMud).lerp(PAL.bank, smooth(0.05, 0.5, my));
+  if (slope > 0.34) return out.copy(slope > 0.6 ? PAL.earth2 : PAL.earth).lerp(PAL.bank, smooth(0.95, 0.45, my) * 0.7);
+  const z1 = fbm(mx / 12 + 4, mz / 12 - 6, 2, 21);
+  const z2 = fbm(mx / 7 - 2, mz / 7 + 5, 2, 24);
+  out.copy(PAL.grass).lerp(PAL.grass2, smooth(0.5, 0.36, z1)).lerp(PAL.grassHi, smooth(0.52, 0.66, z1) * 0.85).lerp(PAL.dry, smooth(0.6, 0.72, z2) * 0.45);
+  out.lerp(PAL.bank, smooth(2.6, 1.1, s) * 0.8);
+  out.lerp(PAL.meadow, smooth(6.5, 3.5, s) * 0.4);
+  if (s > 3.5) {
+    const pd = pathDist(mx, mz);
+    out.lerp(PAL.trod, smooth(1.5, 0.95, pd) * 0.5);
+    out.lerp(noise2(mx * 0.5, mz * 0.5, 3) < 0.5 ? PAL.path : PAL.path2, smooth(1.0, 0.72, pd));
   }
-  if (my < 0.42) return out.copy(PAL.wetMud).lerp(PAL.mud, smooth(0.02, 0.42, my) * 0.6).offsetHSL(0, 0, grain);
-  if (slope > 0.34) {
-    out.copy(slope > 0.6 ? PAL.earth2 : PAL.earth).lerp(PAL.mud, smooth(0.9, 0.3, my) * 0.7);
-    return out.offsetHSL(0, 0, grain * 1.4);
-  }
-  if (my < LAND - 0.3 && s < 4.5) return out.copy(PAL.ledge).lerp(PAL.mud, smooth(0.8, 0.35, my) * 0.8).offsetHSL(0, 0, grain);
-  const pd = pathDist(mx, mz);
-  const n = fbm(mx * 0.33, mz * 0.33, 2, 21) + (fbm(mx * 0.09, mz * 0.09, 2, 24) - 0.5) * 0.25;
-  out.copy(TONES[n < 0.41 ? 0 : n < 0.49 ? 1 : n < 0.57 ? 2 : 3]);
-  if (s < 6.5) out.lerp(PAL.meadow, 0.45);
-  if (s > 3.5 && pd < 0.78) return out.copy(noise2(mx * 0.9, mz * 0.9, 3) < 0.5 ? PAL.path : PAL.path2).offsetHSL(0, 0, grain);
-  if (s > 3.5 && pd < 1.05) out.lerp(PAL.trod, 0.65);
-  return out.offsetHSL(0, 0, grain * 0.6);
+  return out;
 }
 
 function occlusion(x, z, h) {
@@ -159,6 +163,8 @@ export function buildIsland(holes = []) {
   const N = n + 1;
   const vtx = new Float32Array(N * N * 3);
   const ao = new Float32Array(N * N);
+  const vcol = new Float32Array(N * N * 3);
+  const vc = new THREE.Color();
   for (let iz = 0; iz <= n; iz++) {
     for (let ix = 0; ix <= n; ix++) {
       const k = iz * N + ix;
@@ -170,6 +176,9 @@ export function buildIsland(holes = []) {
       vtx[k * 3 + 1] = h;
       vtx[k * 3 + 2] = z;
       ao[k] = h > -4.4 ? occlusion(x, z, h) : 1;
+      const sl = Math.min(0.33, Math.hypot(islandHeight(x + 0.4, z) - h, islandHeight(x, z + 0.4) - h) / 0.4 * 0.5);
+      colorAt(x, h, z, sl, vc);
+      vcol[k * 3] = vc.r; vcol[k * 3 + 1] = vc.g; vcol[k * 3 + 2] = vc.b;
     }
   }
   const pos = [];
@@ -186,15 +195,18 @@ export function buildIsland(holes = []) {
     const mx = (ax + bx + dx) / 3, mz = (az + bz + dz) / 3;
     for (const h of holes) if ((mx - h.x) ** 2 + (mz - h.z) ** 2 < h.r * h.r) return;
     pos.push(ax, ay, az, bx, by, bz, dx, dy, dz);
-    faceColor(ax, ay, az, bx, by, bz, dx, dy, dz, c);
     e1.set(bx - ax, by - ay, bz - az);
     e2.set(dx - ax, dy - ay, dz - az);
     fn.crossVectors(e1, e2).normalize();
     if (fn.y < 0) fn.negate();
+    const steep = 1 - fn.y > 0.34;
+    if (steep) faceColor(ax, ay, az, bx, by, bz, dx, dy, dz, c);
+    const j = 1 + (hash2(a, d, 13) - 0.5) * 0.06;
     for (const v of [a, b, d]) {
-      const o = ao[v];
+      const o = ao[v] * j;
       nor.push(fn.x, fn.y, fn.z);
-      col.push(c.r * o, c.g * o, c.b * o);
+      if (steep) col.push(c.r * o, c.g * o, c.b * o);
+      else col.push(vcol[v * 3] * o, vcol[v * 3 + 1] * o, vcol[v * 3 + 2] * o);
     }
     idx.push(a, b, d);
   };

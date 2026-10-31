@@ -48,7 +48,7 @@ export class Grass {
       if (b > 0.5 && s < 7.5) g = 0;
       if (slope > 0.5) g = 0;
       if (h < 0.55) g = 0;
-      if (s > 3.5 && pathDist(wx, wz) < 0.75) g = 0;
+      if (s > 3.5 && pathDist(wx, wz) < 0.85) g = 0;
       const o = (j * MASK + i) * 4;
       img.data[o] = g * 255; img.data[o + 1] = 0; img.data[o + 2] = 0; img.data[o + 3] = 255;
     }
